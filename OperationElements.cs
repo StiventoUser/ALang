@@ -193,7 +193,7 @@ public class UnaryMinusElement : OperationElement
     public override bool HasRightOperand{ get{ return true; } }
     public override string OperationName{ get{ return "unary-"; } }
     public override int Priority{ get{ return OperationPriority.Priorities["u-"]; } }
-
+           
     public override void GenLowLevel(Generator generator)
     {
         m_children[1].GenLowLevel(generator);
@@ -227,4 +227,4 @@ public class CopyElement : OperationElement
         RightOperand.GenLowLevel(generator);
         LeftOperand.GenLowLevel(generator);
     }
-}
+} 
