@@ -216,15 +216,42 @@ public class CopyElement : OperationElement
     public override string OperationName{ get{ return "binary="; } }
     public override int Priority{ get{ return OperationPriority.Priorities["b="]; } }
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenLowLevel(Generator generator)//TODO assign priority in sequence
     {
-        VarGetSetValElement LeftOperand = (VarGetSetValElement)Child(0);
-        ValElement RightOperand = (ValElement)Child(1);
+        ValElement leftOperand = (ValElement)Child(0);
+        ValElement rightOperand = (ValElement)Child(1);
 
-        LeftOperand.IsGet = true;
-        LeftOperand.IsSet = true;
+        Compilation.Assert(leftOperand.ValCount == rightOperand.ValCount,
+                           "Each lvalue is assigned to only one rvalue", Line); 
+        
+        if(leftOperand.ValCount > 1)
+        {
+            var multiple = leftOperand as MultipleValElement;
+            foreach(var i in multiple.GetValues())
+            {
+                i.IsSet = true;
+            }
+
+            multiple.IsGeneratedReverse = false;
+        }
+        else
+        {
+            leftOperand.IsSet = true;
+        }   
+        if(rightOperand.ValCount > 1)
+        {
+            var multiple = rightOperand as MultipleValElement;
+            foreach(var i in multiple.GetValues())
+            {
+                i.IsGet = true;
+            }
+        }
+        else
+        {
+            rightOperand.IsSet = true;
+        }
  
-        RightOperand.GenLowLevel(generator);
-        LeftOperand.GenLowLevel(generator);
+        rightOperand.GenLowLevel(generator);
+        leftOperand.GenLowLevel(generator);
     }
 } 

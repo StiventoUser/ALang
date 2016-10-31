@@ -130,6 +130,7 @@ public class PrintCurrentValElement : TreeElement
 {
     public override void GenLowLevel(Generator generator)
     {
+        VarGet.IsGet = true;
         VarGet.GenLowLevel(generator);
 
         generator.AddOp(GenCodes.Print, 0, null);

@@ -53,7 +53,7 @@ public sealed class Interpreter
                     m_stack.Push(-m_stack.Pop());
                     break;
                 case GenCodes.Print://temporary
-                    Console.WriteLine("Value: " + m_stack.Peek());
+                    Console.WriteLine("Value: " + m_stack.Pop());
                     break;
             }
         }

@@ -17,6 +17,8 @@ public sealed class ElementResultType
 public abstract class ValElement : TreeElement
 {
     public abstract int ValCount{ get; }
+    public bool IsGet{get;set;} = false;
+    public bool IsSet{get;set;} = false;
     public ElementResultType Result = new ElementResultType();
 }
 public class ConstValElement : ValElement
@@ -45,8 +47,6 @@ public class VarGetSetValElement : ValElement
     public override int ValCount{ get{ return 1; } }
 
     public string VarName;
-    public bool IsGet = false;
-    public bool IsSet = false;
 
     public override void GenLowLevel(Generator generator)
     {
@@ -62,20 +62,29 @@ public class VarGetSetValElement : ValElement
 }
 public class MultipleValElement : ValElement
 {
-    public override int ValCount{ get{ return Values.Count; } }
+    public override int ValCount{ get{ return m_values.Count; } }
+    public bool IsGeneratedReverse{get;set;} = true;
 
     public void AddValueVoid(ValElement elem)
     {
-        Values.Add(elem);
+        m_values.Add(elem);
         AddChild(elem);
     }
-    private List<ValElement> Values = new List<ValElement>();
+    public List<ValElement> GetValues()
+    {
+        return m_values;
+    }
+    private List<ValElement> m_values = new List<ValElement>();
 
     public override void GenLowLevel(Generator generator)
     {
-        IEnumerable<ValElement> enumVars = Values;
-
-        foreach(var values in enumVars.Reverse())
+        IEnumerable<ValElement> enumVars = m_values;
+        if(IsGeneratedReverse)
+        {
+            enumVars = enumVars.Reverse();
+        }
+        
+        foreach(var values in enumVars)
         {
             values.GenLowLevel(generator);
         }

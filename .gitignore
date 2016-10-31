@@ -1,3 +1,4 @@
 .vscode/
 bin/Debug/netcoreapp1.0/
 obj/Debug/netcoreapp1.0/
+project.lock.json

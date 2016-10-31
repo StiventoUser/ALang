@@ -110,7 +110,7 @@ public sealed partial class Parser
 
             PrintCurrentValElement printElem = new PrintCurrentValElement();
             string varName = lexems[pos].source;
-            printElem.VarGet = new VarGetSetValElement{ VarName = varName, IsGet = true };
+            printElem.VarGet = new VarGetSetValElement{ VarName = varName };
 
             ++pos;
             
@@ -432,7 +432,7 @@ public sealed partial class Parser
         }
         else if(m_currentFunction.LocalVars.Any(local => local.VarName == lexems[pos].source))
         {
-            var val = new VarGetSetValElement{ VarName = lexems[pos].source, IsGet = true };
+            var val = new VarGetSetValElement{ VarName = lexems[pos].source };
             multipleVals.AddValueVoid(val); 
             ++pos;
             elem = val;
