@@ -6,6 +6,16 @@ using System.Linq;
 
 using Lexems = System.Collections.Generic.List<Lexem>;
 
+namespace Parser1To2Pass
+{
+    sealed public class FunctionInfo
+    {
+        public LanguageFunction Info;
+        public Lexems FuncLexems;
+        public List<Lexems> ArgInitLexems;
+    }
+}
+
 public sealed partial class Parser
 {
     public void Parse(Lexems lexems)
@@ -17,21 +27,10 @@ public sealed partial class Parser
             pos = FindElement(lexems, pos);
         }
 
-        ParseSecondStage();
+        ParseSecondPass();
     }
 
     private int FindElement(Lexems lexems, int pos)
-    {
-        if(m_scopeLevel == 0)//Global
-        {
-            return FindElementInGlobal(lexems, pos);
-        }
-        else
-        {
-            return FindElementInLocal(lexems, pos);
-        }
-    }
-    private int FindElementInGlobal(Lexems lexems, int pos)
     {
         if(lexems[pos].codeType == Lexem.CodeType.Reserved)
         {
@@ -40,29 +39,26 @@ public sealed partial class Parser
             case "using":
                 break;
             case "function":
-                return FindFunction(lexems, pos);
+                return ParseFunctionDeclaration(lexems, pos);
             case "class":
                 break;
             case "constexpr":
                 break;
             default:
-                Compilation.WriteError("Unknown reserved word: '" + lexems[pos] + "'. It's a bug", lexems[pos].line);
+                Compilation.WriteError("Unknown word: '" + lexems[pos] + "'.", lexems[pos].line);
                 break;
             }
         }
 
         return pos;
     }
-    private int FindElementInLocal(Lexems lexems, int pos)
-    {
-        return pos;
-    }
-    private int FindFunction(Lexems lexems, int pos)
+    private int ParseFunctionDeclaration(Lexems lexems, int pos)
     {
         ++pos;//skip "function"
 
         Compilation.Assert(lexems[pos].codeType == Lexem.CodeType.Name,
                            "Invalid function name: '" + lexems[pos].source + "'.", lexems[pos].line);
+
         string functionName = lexems[pos].source;
         ++pos;
 
@@ -81,9 +77,11 @@ public sealed partial class Parser
 
             while(true)
             {
-                pos = FindFuncVarDeclaration(lexems, pos, false, out typeName, out varName, out initElements);
+                pos = ParseFuncVarDeclaration(lexems, pos, false, out typeName, out varName, out initElements);
 
-                args.Add(new LanguageFunction.FunctionArg{ TypeName = typeName, ArgName = varName });
+                args.Add(new LanguageFunction.FunctionArg{ TypeInfo = m_symbols.GetTypeByName(typeName),
+                                                           ArgName = varName,
+                                                           DefaultVal = null/*Will be set in the 2nd pass*/ });
                 argsInitLexems.Add(initElements);
 
                 if(lexems[pos].source == ")")
@@ -115,7 +113,8 @@ public sealed partial class Parser
         List<string> returnVars = new List<string>();
         do  
         {
-            Compilation.Assert(lexems[pos].codeType == Lexem.CodeType.Reserved || lexems[pos].codeType == Lexem.CodeType.Name,
+            Compilation.Assert(lexems[pos].codeType == Lexem.CodeType.Reserved ||
+                               lexems[pos].codeType == Lexem.CodeType.Name,
                                "'" + lexems[pos].source + "' can't be a type", lexems[pos].line);
             returnVars.Add(lexems[pos].source);
             ++pos;
@@ -138,12 +137,16 @@ public sealed partial class Parser
         }
         while(true);
 
-        var funcInfo = new LanguageFunction{ Name = functionName, Arguments = args, ReturnTypes = returnVars };
+        var funcInfo = new LanguageFunction{ Name = functionName, Arguments = args, 
+                                             ReturnTypes = returnVars.Select(typeName => 
+                                                                                m_symbols.GetTypeByName(typeName))
+                                                                     .ToList() };
         bool ok = m_symbols.AddUserFunction(funcInfo);
         if(!ok)
         {
             Compilation.WriteError("Function " + funcInfo.Name + "' with arguments [" 
-                                   + funcInfo.Arguments.Select(arg => arg.TypeName).Aggregate((arg1, arg2) => arg1 + ", " + arg2)
+                                   + funcInfo.Arguments.Select(arg => arg.TypeInfo.Name)
+                                                       .Aggregate((arg1, arg2) => arg1 + ", " + arg2)
                                    + "] already exists", lexems[pos].line);
         }
 
@@ -151,12 +154,13 @@ public sealed partial class Parser
         Lexems funcLexems;
         pos = ExtractBlock(lexems, pos, out funcLexems);
 
-        m_foundedFunctions.Add(new FunctionParserInfo{ Info = funcInfo, FuncLexems = funcLexems, ArgInitLexems = argsInitLexems });
+        m_foundedFunctions.Add(new Parser1To2Pass.FunctionInfo
+                                    { Info = funcInfo, FuncLexems = funcLexems, ArgInitLexems = argsInitLexems });
 
         return pos;
     }
 
-    private int FindFuncVarDeclaration(Lexems lexems, int pos, bool assertOnUnknownType,
+    private int ParseFuncVarDeclaration(Lexems lexems, int pos, bool assertOnUnknownType,
                                     out string typeName, out string varName, out Lexems initElements)
     {
         Compilation.Assert(m_symbols.IsTypeExist(lexems[pos].source)
@@ -239,7 +243,6 @@ public sealed partial class Parser
         return pos;
     }
 
-    int m_scopeLevel = 0;
     LanguageSymbols m_symbols = new LanguageSymbols();
     public static int CurrentLine;
 }

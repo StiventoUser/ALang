@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public sealed class ElementResultType
+public sealed class ElementResultType//TODO Operation result
 {
     public bool IsFunction;
 
@@ -101,7 +101,7 @@ public class MultipleValElement : ValElement
     public override int ValCount{ get{ return m_values.Count; } }
     public bool IsGeneratedReverse{get;set;} = true;
 
-    public void AddValueVoid(ValElement elem)
+    public void AddValue(ValElement elem)
     {
         m_values.Add(elem);
         AddChild(elem);

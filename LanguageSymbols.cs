@@ -2,8 +2,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
-//TODO Refactoring
-
 public sealed class LanguageType
 {
     public string Name;
@@ -16,14 +14,14 @@ public sealed class LanguageFunction
 {
     public sealed class FunctionArg
     {
-        public string TypeName;
+        public LanguageType TypeInfo;
         public string ArgName;
         public ValElement DefaultVal;
     }
     public string Name;
 
     public List<FunctionArg> Arguments;
-    public List<string> ReturnTypes;
+    public List<LanguageType> ReturnTypes;
 }
 public sealed class PossibleConvertions
 {
@@ -65,6 +63,19 @@ public sealed class LanguageSymbols
         return m_defaultTypes.Exists(type => type.Name == name) ||
                m_userTypes.Exists(type => type.Name == name);
     }
+    public LanguageType GetTypeByName(string name)
+    {
+        var result = m_defaultTypes.Find(type => type.Name == name);
+
+        if(result == null)
+        {
+            result = m_userTypes.Find(type => type.Name == name);
+        }
+
+        Compilation.Assert(result != null, "Type '" + name + "' wasn't found", -1);
+
+        return result;
+    }
     public bool IsTypeReserved(string name)
     {
         return m_defaultTypes.Exists(type => type.Name == name);
@@ -82,18 +93,19 @@ public sealed class LanguageSymbols
     public bool IsFunctionExist(string name, IList<string> args)
     {
         return m_userFunctions.Exists( func => func.Name == name &&
-                                               func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeName == arg2 ) );
+                                        func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeInfo.Name == arg2 ) );
     }
     public bool IsFunctionExist(string name, IList<LanguageFunction.FunctionArg> args)
     {
         return m_userFunctions.Exists( func => func.Name == name &&
-                                               func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeName == arg2.TypeName ) );
+                                        func.Arguments.CompareTo(args, 
+                                            (arg1, arg2) => arg1.TypeInfo.Name == arg2.TypeInfo.Name ) );
     }
     public void UpdateFunction(LanguageFunction function)
     {
         m_userFunctions.RemoveAll( func => func.Name == function.Name &&
-                                func.Arguments.CompareTo(function.Arguments, 
-                                    (arg1, arg2) => arg1.TypeName == arg2.TypeName ) );
+                                    func.Arguments.CompareTo(function.Arguments, 
+                                        (arg1, arg2) => arg1.TypeInfo.Name == arg2.TypeInfo.Name ) );
                                              
         m_userFunctions.Add(function);
     }
@@ -110,7 +122,10 @@ public sealed class LanguageSymbols
     }
     public bool AddUserFunction(string name, IList<LanguageFunction.FunctionArg> args, IList<string> returnTypes)
     {
-        return AddUserFunction(new LanguageFunction{ Name = name, Arguments = args.ToList(), ReturnTypes = returnTypes.ToList() });
+        var typesInfo = returnTypes.Select(typeName => GetTypeByName(typeName));
+
+        return AddUserFunction(new LanguageFunction{ Name = name, Arguments = args.ToList(), 
+                                        ReturnTypes = typesInfo.ToList() });
     }
 
     public PossibleConvertions GetCastInfo(string from, string to)
@@ -132,11 +147,11 @@ public sealed class LanguageSymbols
     {
         if(val.Contains('.'))
         {
-            return "single";
+            return DefTypesName.Get(DefTypesName.Index.Single);
         }
         else
         {
-            return "int32";
+            return DefTypesName.Get(DefTypesName.Index.Int32);
         }
     }
     public ConstValElement GetDefaultVal(string type)
@@ -155,29 +170,55 @@ public sealed class LanguageSymbols
         return m_defaultValOfDefaultTypes[type];
     }
 
+    private static class DefTypesName
+    {
+        public enum Index
+        {
+            Int64, Int32, Int16, Int8, Double, Single, String, Bool 
+        }
+
+        public static string Get(Index index)
+        {
+            return m_defaultTypesName[(int)index];
+        }
+
+        private static string[] m_defaultTypesName = 
+        { "Int64", "Int32", "Int16", "Int8", "Double", "Single", "String", "Bool" };
+    }
+
     private Dictionary<string, ConstValElement> m_defaultValOfDefaultTypes = new Dictionary<string, ConstValElement>
     {
-        { "int32", new ConstValElement{ Type = "int32", Value = "0" } }
+        { DefTypesName.Get(DefTypesName.Index.Int32), 
+                           new ConstValElement{ Type = DefTypesName.Get(DefTypesName.Index.Int32), Value = "0" } }
     };
     private List<string> m_preciseLevel = new List<string>
     {
-        "string", "double", "single", "int64", "int32", "int16", "int8", "bool"
+        DefTypesName.Get(DefTypesName.Index.String),
+        DefTypesName.Get(DefTypesName.Index.Double),
+        DefTypesName.Get(DefTypesName.Index.Single),
+        DefTypesName.Get(DefTypesName.Index.Int64),
+        DefTypesName.Get(DefTypesName.Index.Int32),
+        DefTypesName.Get(DefTypesName.Index.Int16),
+        DefTypesName.Get(DefTypesName.Index.Int8),
+        DefTypesName.Get(DefTypesName.Index.Bool)
     };
 
     private List<PossibleConvertions> m_defaultConvertions = new List<PossibleConvertions>
     {
-        new PossibleConvertions{ FromType = "int8", ToType = "int16", CanCast = true }
+        new PossibleConvertions{ FromType = DefTypesName.Get(DefTypesName.Index.Int8),
+                                 ToType   = DefTypesName.Get(DefTypesName.Index.Int16),
+                                 CanCast  = true }
     };
 
     private List<LanguageType> m_defaultTypes = new List<LanguageType>{ 
-        new LanguageType{ Name = "int8", IsReserved = true, IsInteger = true },
-        new LanguageType{ Name = "int16", IsReserved = true, IsInteger = true },
-        new LanguageType{ Name = "int32", IsReserved = true, IsInteger = true },
-        new LanguageType{ Name = "int64", IsReserved = true, IsInteger = true },
-        new LanguageType{ Name = "bool", IsReserved = true },
-        new LanguageType{ Name = "single", IsReserved = true, IsFloat = true },
-        new LanguageType{ Name = "double", IsReserved = true, IsFloat = true },
-        new LanguageType{ Name = "string", IsReserved = true }
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int8), IsReserved = true, IsInteger = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int16), IsReserved = true, IsInteger = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int32), IsReserved = true, IsInteger = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int64), IsReserved = true, IsInteger = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Bool), IsReserved = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Single), IsReserved = true, IsFloat = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Double), IsReserved = true, IsFloat = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.String), IsReserved = true }
         };
     private List<LanguageType> m_userTypes = new List<LanguageType>();
 

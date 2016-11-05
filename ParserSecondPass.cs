@@ -1,17 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 using Lexems = System.Collections.Generic.List<Lexem>;
-
-sealed public class FunctionParserInfo
-{
-    public LanguageFunction Info;
-    public Lexems FuncLexems;
-    public List<Lexems> ArgInitLexems;
-}
 
 sealed public class ParserOutput
 {
@@ -25,26 +17,25 @@ public sealed partial class Parser
         return m_parserOutput;
     }
 
-    private void ParseSecondStage()
+    private void ParseSecondPass()
     {
+        //Parse all declarations
+        foreach(var funcInfo in m_foundedFunctions)
+        {
+            ParseFunctionDefaultVals(funcInfo);
+        }
+        
+        //Parse all definitions
         foreach(var funcInfo in m_foundedFunctions)
         {
             ParseFunction(funcInfo);
         }
     }
 
-    private void ParseFunction(FunctionParserInfo funcInfo)
+    private void ParseFunctionDefaultVals(Parser1To2Pass.FunctionInfo funcInfo)
     {
-        FunctionElement funcElem = new FunctionElement();
-        m_currentFunction = funcElem;
-
-        StatementListElement statements = new StatementListElement();
-        TreeElement element;
-
-        m_currentStatement.Push(statements);
-
         ValElement valElement;
-        List<ValElement> argInitValElements = new List<ValElement>();
+
         for(int i = 0, end = funcInfo.ArgInitLexems.Count; i < end; ++i)
         {
             if(funcInfo.ArgInitLexems[i].Count != 0)
@@ -53,11 +44,22 @@ public sealed partial class Parser
             }
             else
             {
-                valElement = m_symbols.GetDefaultVal(funcInfo.Info.Arguments[i].TypeName);
+                valElement = null;
             }
 
-            argInitValElements.Add(valElement);
+            funcInfo.Info.Arguments[i].DefaultVal = valElement;
         }
+        m_symbols.UpdateFunction(funcInfo.Info);
+    }
+    private void ParseFunction(Parser1To2Pass.FunctionInfo funcInfo)
+    {
+        FunctionElement funcElem = new FunctionElement();
+        m_currentFunction = funcElem;
+
+        StatementListElement statements = new StatementListElement();
+        TreeElement element;
+
+        m_currentStatement.Push(statements);
 
         if(funcInfo.FuncLexems.Count > 0)
         {
@@ -74,25 +76,11 @@ public sealed partial class Parser
             }   
         }
 
-        for(int i = 0, end = argInitValElements.Count; i < end; ++i)
-        {
-            funcInfo.Info.Arguments[i].DefaultVal = argInitValElements[i];
-        }
-        m_symbols.UpdateFunction(funcInfo.Info);
-
         funcElem.AddChild(statements);
-
-        funcElem.ArgInitVals = argInitValElements;
-        funcElem.Info = funcInfo.Info;
 
         m_parserOutput.Functions.Add(funcElem);
 
         m_currentStatement.Pop();
-
-        //TODO?
-        //funcInfo.FuncLexems = null;
-
-        //ParseMultipleExpressions(funcInfo.FuncLexems, 0, out element);
     }
 
     private int ParseStatement(Lexems lexems, int pos, out TreeElement elem)
@@ -111,7 +99,7 @@ public sealed partial class Parser
             elem = null;
             return ++pos;
         }
-        else if(lexems[pos].source == "print")
+        else if(lexems[pos].source == "print")//TODO remove it
         {
             ++pos;
 
@@ -129,7 +117,6 @@ public sealed partial class Parser
         {
             ValElement expr;  
             pos = ParseExpression(lexems, pos, out expr);
-            //pos = ParseMultipleExpressions(lexems, pos, out multExpr);
             elem = expr;
 
             ++pos;//skip ';'
@@ -209,14 +196,13 @@ public sealed partial class Parser
         {
             foreach(var variable in multipleDecl.GetVars()) 
             {
-                variable.InitVal = m_symbols.GetDefaultValOfDefaultType(variable.VarType);
+                variable.InitVal = m_symbols.GetDefaultVal(variable.VarType);
             }
         }
         else
         {
             ValElement initElements;
             pos = ParseExpression(lexems, pos, out initElements, -1, false); 
-            //pos = ParseMultipleExpressions(lexems, pos, out initElements);
 
             Compilation.Assert(multipleDecl.GetVars().Count == initElements.ValCount, 
                                "Each variable associated with only one expression (variables: " 
@@ -271,7 +257,8 @@ public sealed partial class Parser
                        breakCycle = true;
                        continue;
                 case ",":
-                    Compilation.WriteError("Unexpected symbol: ','. Did you forget '(' ?\nExample: '( SYMBOLS, SYMBOLS )'.",
+                    Compilation.WriteError("Unexpected symbol: ','." +
+                                           "Did you forget '(' ?\nExample: '( SYMBOLS, SYMBOLS )'.",
                                             lexems[pos].line);
                     continue;
                 case "+":
@@ -400,7 +387,7 @@ public sealed partial class Parser
                         if(currentLevel == 0)
                         {
                             pos = i = ParseExpression(lexems, pos, out val, i, false) + 1;
-                            multipleVals.AddValueVoid(val);
+                            multipleVals.AddValue(val);
                         }
                         else
                         {
@@ -411,7 +398,7 @@ public sealed partial class Parser
                         if(currentLevel == 1)
                         {
                             pos = i = ParseExpression(lexems, pos, out val, i, false) + 1;
-                            multipleVals.AddValueVoid(val);
+                            multipleVals.AddValue(val);
                         }
                         else
                         {
@@ -432,7 +419,6 @@ public sealed partial class Parser
         {
             var val = new ConstValElement{ Type = m_symbols.GetTypeOfConstVal(lexems[pos].source),
                                             Value = lexems[pos].source };
-            //multipleVals.Values.Add(val);
             ++pos;
             elem = val;
             return pos;
@@ -440,7 +426,7 @@ public sealed partial class Parser
         else if(m_currentFunction.LocalVars.Any(local => local.VarName == lexems[pos].source))
         {
             var val = new VarGetSetValElement{ VarName = lexems[pos].source };
-            multipleVals.AddValueVoid(val); 
+
             ++pos;
             elem = val;
             return pos;
@@ -468,12 +454,14 @@ public sealed partial class Parser
                 }
                 else
                 {
-                    Compilation.WriteError("Operation '" + operation.OperationName + "' already has right operand", value.Line);
+                    Compilation.WriteError("Operation '" + operation.OperationName +
+                                           "' already has right operand", value.Line);
                 }
             }
             else
             {
-                Compilation.WriteError("Operation '" + operation.OperationName + "' hasn't right operand", value.Line);
+                Compilation.WriteError("Operation '" + operation.OperationName + 
+                                       "' hasn't right operand", value.Line);
             }
         }
         else
@@ -486,16 +474,20 @@ public sealed partial class Parser
                 }
                 else
                 {
-                    Compilation.WriteError("Operation '" + operation.OperationName + "' already has left operand", value.Line);
+                    Compilation.WriteError("Operation '" + operation.OperationName + 
+                                           "' already has left operand", value.Line);
                 }
             }
             else
             {
-                Compilation.WriteError("Operation '" + operation.OperationName + "' hasn't left operand", value.Line);
+                Compilation.WriteError("Operation '" + operation.OperationName + 
+                                       "' hasn't left operand", value.Line);
             }
         }
     }
-    private void InsertOperationInTree<T>(ref OperationElement lastOperation, ref T operation, ref OperationElement rootOperation)
+    private void InsertOperationInTree<T>(ref OperationElement lastOperation, 
+                                          ref T operation, 
+                                          ref OperationElement rootOperation)
                                 where T : OperationElement
     {
         if(operation.Priority > lastOperation.Priority ||
@@ -523,6 +515,6 @@ public sealed partial class Parser
 
     private FunctionElement m_currentFunction;
     private Stack<StatementListElement> m_currentStatement = new Stack<StatementListElement>();
-    private List<FunctionParserInfo> m_foundedFunctions = new List<FunctionParserInfo>();
+    private List<Parser1To2Pass.FunctionInfo> m_foundedFunctions = new List<Parser1To2Pass.FunctionInfo>();
     private ParserOutput m_parserOutput = new ParserOutput();
 }

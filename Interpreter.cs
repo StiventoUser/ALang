@@ -52,7 +52,7 @@ public sealed class Interpreter
                 case GenCodes.Negate:
                     m_stack.Push(-m_stack.Pop());
                     break;
-                case GenCodes.Print://temporary
+                case GenCodes.Print://TODO temporary
                     Console.WriteLine("Value: " + m_stack.Pop());
                     break;
             }

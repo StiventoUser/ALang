@@ -8,8 +8,10 @@ public sealed class Compiler
     {
         if(args.Length == 0)
         {
-            args = new string[] { "run", "123.51564: int task_1 = 52;\nvoid test(arg == 12);" };
+            return;
         }
+
+        //TODO arguments exception-free container
 
         string source;  
 

@@ -29,7 +29,7 @@ public sealed class Generator
         {
             //func.GenLowLevel(this);
         }
-        parserOutput.Functions[0].GenLowLevel(this);
+        parserOutput.Functions[0].GenLowLevel(this);//TODO normal code generation
 
         m_output.Operations = m_operations;
     }
@@ -38,7 +38,7 @@ public sealed class Generator
         return m_output;
     }
 
-    public int GetLocalVarIndex(string name)
+    public int GetLocalVarIndex(string name)//TODO add unique variable id (maybe line?)
     {
         int index = m_localVars.IndexOf(name);
 
@@ -50,7 +50,7 @@ public sealed class Generator
 
         return index;
     }
-    public void RemoveLocalVariable(string name)
+    public void RemoveLocalVariable(string name)//TODO remove?
     {
         m_localVars.Remove(name);
     }

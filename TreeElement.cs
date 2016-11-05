@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public abstract class TreeElement
 {
-    public int Line;
+    public int Line;//TODO initialize in parser
     public virtual bool IsCompileTime
     {
         get{ return false; }
@@ -93,40 +93,8 @@ public abstract class TreeElement
     public abstract void GenLowLevel(Generator generator);
 }
 
-public class FunctionElement : TreeElement
-{
-    public override void GenLowLevel(Generator generator)
-    {
-        generator.ResetLocalVarCounter();
 
-        foreach(var child in m_children)
-        {
-            child.GenLowLevel(generator);
-        }
-    }
-
-    public List<ValElement> ArgInitVals = new List<ValElement>();
-    public List<VarDeclarationElement> LocalVars = new List<VarDeclarationElement>();
-    public LanguageFunction Info;
-}
-public class StatementListElement : TreeElement
-{
-    public override void GenLowLevel(Generator generator)
-    {
-        foreach(var child in m_children)
-        {
-            child.GenLowLevel(generator);
-        }
-
-        foreach(var variable in LocalVariables)
-        {
-            variable.GenLowLevelDelete(generator);
-        }
-    }
-
-    public List<VarDeclarationElement> LocalVariables = new List<VarDeclarationElement>();
-}
-public class PrintCurrentValElement : TreeElement
+public class PrintCurrentValElement : TreeElement//TODO remove it
 {
     public override void GenLowLevel(Generator generator)
     {
