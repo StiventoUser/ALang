@@ -14,6 +14,17 @@ public static class OperationPriority
         { "b^", 7 },
         { "u-", 8 }
     };
+    public static readonly Dictionary<string, bool> IsCompareToThisAsLessPriority = new Dictionary<string, bool>
+    {
+        //string operation: 1)(1 symbol) b - binary, u - unary; 2)(1 or more symbols) operation
+        { "b=", false },
+        { "b+", true },
+        { "b-", true },
+        { "b*", true },
+        { "b/", true },
+        { "b^", true },
+        { "u-", true }
+    };
 }
 
 public abstract class OperationElement : ValElement
@@ -36,8 +47,8 @@ public class BinaryPlusElement : OperationElement
     public override bool HasLeftOperand{ get{ return true; } }
     public override bool HasRightOperand{ get{ return true; } }
     
-    public override string OperationName{ get{ return "binary+"; } }
-    public override int Priority{ get{ return OperationPriority.Priorities["b+"]; } }
+    public override string OperationName{ get{ return "b+"; } }
+    public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
     /*private ElementResultType GetResultOf()
     {
         var result1 = Value1.Result;
@@ -84,12 +95,19 @@ public class BinaryPlusElement : OperationElement
         }
     }*/
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        m_children[0].GenLowLevel(generator);
-        m_children[1].GenLowLevel(generator);
+        Child<ValElement>(0).GenerateValue(generator, index);
+        Child<ValElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Add, 0, null);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
+        {
+            GenerateValue(generator, i);
+        }
     }
 }
 public class BinaryMinusElement : OperationElement
@@ -103,15 +121,22 @@ public class BinaryMinusElement : OperationElement
     }
     public override bool HasLeftOperand{ get{ return true; } }
     public override bool HasRightOperand{ get{ return true; } }
-    public override string OperationName{ get{ return "binary-"; } }
-    public override int Priority{ get{ return OperationPriority.Priorities["b-"]; } }
+    public override string OperationName{ get{ return "b-"; } }
+    public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        m_children[0].GenLowLevel(generator);
-        m_children[1].GenLowLevel(generator);
+        Child<ValElement>(0).GenerateValue(generator, index);
+        Child<ValElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Subtract, 0, null);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
+        {
+            GenerateValue(generator, i);
+        }
     }
 }
 public class BinaryMultiplicationElement : OperationElement
@@ -125,15 +150,22 @@ public class BinaryMultiplicationElement : OperationElement
     }
     public override bool HasLeftOperand{ get{ return true; } }
     public override bool HasRightOperand{ get{ return true; } }
-    public override string OperationName{ get{ return "binary*"; } }
-    public override int Priority{ get{ return OperationPriority.Priorities["b*"]; } }
+    public override string OperationName{ get{ return "b*"; } }
+    public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        m_children[0].GenLowLevel(generator);
-        m_children[1].GenLowLevel(generator);
+        Child<ValElement>(0).GenerateValue(generator, index);
+        Child<ValElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Multiply, 0, null);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
+        {
+            GenerateValue(generator, i);
+        }
     }
 }
 public class BinaryDivisionElement : OperationElement
@@ -147,15 +179,22 @@ public class BinaryDivisionElement : OperationElement
     }
     public override bool HasLeftOperand{ get{ return true; } }
     public override bool HasRightOperand{ get{ return true; } }
-    public override string OperationName{ get{ return "binary/"; } }
-    public override int Priority{ get{ return OperationPriority.Priorities["b/"]; } }
+    public override string OperationName{ get{ return "b/"; } }
+    public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        m_children[0].GenLowLevel(generator);
-        m_children[1].GenLowLevel(generator);
+        Child<ValElement>(0).GenerateValue(generator, index);
+        Child<ValElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Divide, 0, null);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
+        {
+            GenerateValue(generator, i);
+        }
     }
 }
 public class BinaryExponentiationElement : OperationElement
@@ -169,15 +208,22 @@ public class BinaryExponentiationElement : OperationElement
     }
     public override bool HasLeftOperand{ get{ return true; } }
     public override bool HasRightOperand{ get{ return true; } }
-    public override string OperationName{ get{ return "binary^"; } }
-    public override int Priority{ get{ return OperationPriority.Priorities["b^"]; } }
+    public override string OperationName{ get{ return "b^"; } }
+    public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        m_children[0].GenLowLevel(generator);
-        m_children[1].GenLowLevel(generator);
+        Child<ValElement>(0).GenerateValue(generator, index);
+        Child<ValElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Exponent, 0, null);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
+        {
+            GenerateValue(generator, i);
+        }
     }
 }
 public class UnaryMinusElement : OperationElement
@@ -191,14 +237,21 @@ public class UnaryMinusElement : OperationElement
     }
     public override bool HasLeftOperand{ get{ return false; } }
     public override bool HasRightOperand{ get{ return true; } }
-    public override string OperationName{ get{ return "unary-"; } }
-    public override int Priority{ get{ return OperationPriority.Priorities["u-"]; } }
+    public override string OperationName{ get{ return "u-"; } }
+    public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
            
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        m_children[1].GenLowLevel(generator);
+        Child<ValElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Negate, 0, null);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
+        {
+            GenerateValue(generator, i);
+        }
     }
 }
 
@@ -213,45 +266,28 @@ public class CopyElement : OperationElement
     }
     public override bool HasLeftOperand{ get{ return true; } }
     public override bool HasRightOperand{ get{ return true; } }
-    public override string OperationName{ get{ return "binary="; } }
-    public override int Priority{ get{ return OperationPriority.Priorities["b="]; } }
+    public override string OperationName{ get{ return "b="; } }
+    public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
 
-    public override void GenLowLevel(Generator generator)//TODO assign priority in sequence
+    public override void GenerateValue(Generator generator, int index)
     {
         ValElement leftOperand = (ValElement)Child(0);
         ValElement rightOperand = (ValElement)Child(1);
 
         Compilation.Assert(leftOperand.ValCount == rightOperand.ValCount,
                            "Each lvalue is assigned to only one rvalue", Line); 
-        
-        if(leftOperand.ValCount > 1)
-        {
-            var multiple = leftOperand as MultipleValElement;
-            foreach(var i in multiple.GetValues())
-            {
-                i.IsSet = true;
-            }
 
-            multiple.IsGeneratedReverse = false;
-        }
-        else
+        leftOperand.IsSet = true;
+        rightOperand.IsGet = true;
+
+        rightOperand.GenerateValue(generator, index);
+        leftOperand.GenerateValue(generator, index);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
         {
-            leftOperand.IsSet = true;
-        }   
-        if(rightOperand.ValCount > 1)
-        {
-            var multiple = rightOperand as MultipleValElement;
-            foreach(var i in multiple.GetValues())
-            {
-                i.IsGet = true;
-            }
+            GenerateValue(generator, i);
         }
-        else
-        {
-            rightOperand.IsSet = true;
-        }
- 
-        rightOperand.GenLowLevel(generator);
-        leftOperand.GenLowLevel(generator);
     }
 } 

@@ -45,9 +45,16 @@ public sealed partial class Parser
 
         ValElement valElement;
         List<ValElement> argInitValElements = new List<ValElement>();
-        foreach(var arg in funcInfo.ArgInitLexems)
+        for(int i = 0, end = funcInfo.ArgInitLexems.Count; i < end; ++i)
         {
-            ParseExpression(arg, 0, out valElement);
+            if(funcInfo.ArgInitLexems[i].Count != 0)
+            {
+                ParseExpression(funcInfo.ArgInitLexems[i], 0, out valElement, -1, false);
+            }
+            else
+            {
+                valElement = m_symbols.GetDefaultVal(funcInfo.Info.Arguments[i].TypeName);
+            }
 
             argInitValElements.Add(valElement);
         }
@@ -236,7 +243,7 @@ public sealed partial class Parser
         return pos;
     }
 
-    private int ParseExpression(Lexems lexems, int pos, out ValElement elem, int endPos = -1, bool requireOPeration = true)
+    private int ParseExpression(Lexems lexems, int pos, out ValElement elem, int endPos = -1, bool requireOperation = true)
     {    
         Lexem currentLexem;
 
@@ -351,7 +358,7 @@ public sealed partial class Parser
  
         if(rootOperation == null)
         {
-            if(requireOPeration)
+            if(requireOperation)
             {
                 Compilation.WriteError("Expression must contain at least one operator", lexems[pos].line);
             }
@@ -491,7 +498,9 @@ public sealed partial class Parser
     private void InsertOperationInTree<T>(ref OperationElement lastOperation, ref T operation, ref OperationElement rootOperation)
                                 where T : OperationElement
     {
-        if(operation.Priority > lastOperation.Priority)
+        if(operation.Priority > lastOperation.Priority ||
+          (operation.OperationName == lastOperation.OperationName && 
+            !OperationPriority.IsCompareToThisAsLessPriority[operation.OperationName]))
         {
             operation.SetChild(0, lastOperation.Child(1));
 

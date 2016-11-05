@@ -17,11 +17,37 @@ public sealed class ElementResultType
 public abstract class ValElement : TreeElement
 {
     public abstract int ValCount{ get; }
-    public bool IsGet{get;set;} = false;
-    public bool IsSet{get;set;} = false;
+    public bool IsGet
+    {
+        get { return m_isGet; }
+        set
+        {
+            m_isGet = value;
+            foreach(var child in m_children)
+            {
+                (child as ValElement).IsGet = value;
+            }
+        }
+    }
+    public bool IsSet
+    {
+        get { return m_isSet; }
+        set
+        {
+            m_isSet = value;
+            foreach(var child in m_children)
+            {
+                (child as ValElement).IsSet = value;
+            }
+        }
+    }
     public ElementResultType Result = new ElementResultType();
+    public abstract void GenerateValue(Generator generator, int index);
+
+    private bool m_isGet = false;
+    private bool m_isSet = false; 
 }
-public class ConstValElement : ValElement
+public class ConstValElement : ValElement 
 {
     public override int ValCount{ get{ return 1; } }
     public override bool IsCompileTime
@@ -30,17 +56,21 @@ public class ConstValElement : ValElement
     }
     public string Type;
     public string Value;
-
+ 
     public ConstValElement()
     {
         Result = new ElementResultType{ IsFunction = false, ResultType = Type };
     }
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        generator.AddOp(GenCodes.Push, 2, ByteConverter.New().Cast(1/*type*/).Cast(int.Parse(Value)).Bytes);
+        generator.AddOp(GenCodes.Push, 2, 
+            ByteConverter.New().Cast(1/*type*/).Cast(int.Parse(Value)).Bytes);
     }
-
+    public override void GenLowLevel(Generator generator)
+    { 
+        GenerateValue(generator, 0);
+    }
 }
 public class VarGetSetValElement : ValElement
 {
@@ -48,16 +78,22 @@ public class VarGetSetValElement : ValElement
 
     public string VarName;
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
         if(IsSet)
         {
-            generator.AddOp(GenCodes.SetLVarVal, 1, ByteConverter.New().Cast(generator.GetLocalVarIndex(VarName)).Bytes);
+            generator.AddOp(GenCodes.SetLVarVal, 1,
+                ByteConverter.New().Cast(generator.GetLocalVarIndex(VarName)).Bytes);
         }
         if(IsGet)
         {
-            generator.AddOp(GenCodes.GetLVarVal, 1, ByteConverter.New().Cast(generator.GetLocalVarIndex(VarName)).Bytes);
+            generator.AddOp(GenCodes.GetLVarVal, 1, 
+                ByteConverter.New().Cast(generator.GetLocalVarIndex(VarName)).Bytes);
         }
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        GenerateValue(generator, 0);
     }
 }
 public class MultipleValElement : ValElement
@@ -76,17 +112,15 @@ public class MultipleValElement : ValElement
     }
     private List<ValElement> m_values = new List<ValElement>();
 
-    public override void GenLowLevel(Generator generator)
+    public override void GenerateValue(Generator generator, int index)
     {
-        IEnumerable<ValElement> enumVars = m_values;
-        if(IsGeneratedReverse)
+        m_values[index].GenerateValue(generator, index);
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        for(int i = 0, end = ValCount; i < end; ++i)
         {
-            enumVars = enumVars.Reverse();
-        }
-        
-        foreach(var values in enumVars)
-        {
-            values.GenLowLevel(generator);
+            GenerateValue(generator, i);
         }
     }
 }

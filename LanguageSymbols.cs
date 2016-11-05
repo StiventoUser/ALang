@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
+//TODO Refactoring
+
 public sealed class LanguageType
 {
     public string Name;
