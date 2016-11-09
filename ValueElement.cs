@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public sealed class ElementResultType//TODO Operation result
+public sealed class ElementResultType//TODO: Operation result
 {
     public bool IsFunction;
 
@@ -76,7 +76,7 @@ public class VarGetSetValElement : ValElement
 {
     public override int ValCount{ get{ return 1; } }
 
-    public string VarName;
+    public string VarName{get;set;}
 
     public override void GenerateValue(Generator generator, int index)
     {
@@ -96,7 +96,23 @@ public class VarGetSetValElement : ValElement
         GenerateValue(generator, 0);
     }
 }
-public class MultipleValElement : ValElement
+public class FunctionCallElement : ValElement
+{
+    public override int ValCount{ get{ return CallArguments.Count; } }
+
+    public LanguageFunction FunctionInfo{get;set;}
+    public List<ValElement> CallArguments{get;set;}
+
+    public override void GenerateValue(Generator generator, int index)
+    {
+        
+    }
+    public override void GenLowLevel(Generator generator)
+    { 
+        GenerateValue(generator, 0);
+    }
+}
+public class MultipleValElement : ValElement//TODO first: generating values, second: execute operations
 {
     public override int ValCount{ get{ return m_values.Count; } }
     public bool IsGeneratedReverse{get;set;} = true;
@@ -125,7 +141,7 @@ public class MultipleValElement : ValElement
     }
 }
 
-public class VarDeclarationElement : TreeElement
+public class VarDeclarationElement : TreeElement 
 {
     public string VarType;
     public string VarName;
@@ -163,7 +179,7 @@ public class MultipleVarDeclarationElement : TreeElement
     }
     public List<VarDeclarationElement> GetVars()
     {
-        return Vars;//TODO AsReadOnly
+        return Vars;//TODO: AsReadOnly
     } 
     private List<VarDeclarationElement> Vars = new List<VarDeclarationElement>();
 }

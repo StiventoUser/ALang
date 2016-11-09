@@ -11,7 +11,7 @@ public sealed class Compiler
             return;
         }
 
-        //TODO arguments exception-free container
+        //TODO: arguments exception-free container
 
         string source;  
 
@@ -53,7 +53,7 @@ public sealed class Compiler
 
     private void Interpretate()
     {
-        //TODO builder
+        //TODO: builder
     }
 
     Lexer m_lexer = new Lexer();
