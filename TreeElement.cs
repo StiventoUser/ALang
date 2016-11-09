@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public abstract class TreeElement
 {
-    public int Line;//TODO initialize in parser
+    public int Line;//TODO: initialize in parser
     public virtual bool IsCompileTime
     {
         get{ return false; }
@@ -94,7 +94,11 @@ public abstract class TreeElement
 }
 
 
+<<<<<<< HEAD
 public class PrintCurrentValElement : TreeElement//TODO remove it
+=======
+public class PrintCurrentValElement : TreeElement//TODO: remove it
+>>>>>>> temp
 {
     public override void GenLowLevel(Generator generator)
     {
