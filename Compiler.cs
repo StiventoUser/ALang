@@ -2,8 +2,16 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
+/// <summary>
+/// It's a compiler class
+/// </summary>
 public sealed class Compiler
 {
+    /// <summary>
+    /// Execute operations using arguments
+    /// </summary>
+    /// <param name="args">Compiler arguments</param>
+    //TODO: arguments documentation
     public void DoTask(string[] args)
     {
         if(args.Length == 0)
@@ -51,15 +59,14 @@ public sealed class Compiler
 #endif
     }
 
+    /// <summary>
+    /// Execute source after compilation
+    /// </summary>
     private void Interpretate()
     {
-<<<<<<< HEAD
-        //TODO builder
-=======
         //TODO: builder
->>>>>>> temp
     }
-
+    
     Lexer m_lexer = new Lexer();
     Parser m_parser = new Parser();
     Generator m_generator = new Generator();

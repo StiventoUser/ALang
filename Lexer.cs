@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
+/// <summary>
+/// Stores part of input source code
+/// </summary>
 public class Lexem
 {
     public string source;

@@ -6,18 +6,36 @@ using System.Linq;
 
 using Lexems = System.Collections.Generic.List<Lexem>;
 
+/// <summary>
+/// It'll be passed to next pass
+/// </summary>
 namespace Parser1To2Pass
 {
     sealed public class FunctionInfo
     {
+        /// <summary>
+        /// Reference to function information
+        /// </summary>
         public LanguageFunction Info;
+
+        /// <summary>
+        /// Function body lexems
+        /// </summary>
         public Lexems FuncLexems;
+
+        /// <summary>
+        /// Function arguments' default values
+        /// </summary>
         public List<Lexems> ArgInitLexems;
     }
 }
 
 public sealed partial class Parser
 {
+    /// <summary>
+    /// Main parse function. It is called from compiler
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
     public void Parse(Lexems lexems)
     {
         int pos = 0;
@@ -30,6 +48,12 @@ public sealed partial class Parser
         ParseSecondPass();
     }
 
+    /// <summary>
+    /// It detects global scope elements and calls special handler
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <returns>Position of a next lexem</returns>
     private int FindElement(Lexems lexems, int pos)
     {
         if(lexems[pos].codeType == Lexem.CodeType.Reserved)
@@ -52,6 +76,13 @@ public sealed partial class Parser
 
         return pos;
     }
+
+    /// <summary>
+    /// Parse function declaration and save it. (Function body is parsed at second pass)
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <returns>Position of a next lexem</returns>
     private int ParseFunctionDeclaration(Lexems lexems, int pos)
     {
         ++pos;//skip "function"
@@ -160,6 +191,16 @@ public sealed partial class Parser
         return pos;
     }
 
+    /// <summary>
+    /// Parse variable declaration at function declaration
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="assertOnUnknownType">Generate error if type isn't defined</param>
+    /// <param name="typeName">Variable type</param>
+    /// <param name="varName">Variable name</param>
+    /// <param name="initElements">Lexems that inialize this variable. The length can be zero if there no default value</param>
+    /// <returns>Position of a next lexem</returns>
     private int ParseFuncVarDeclaration(Lexems lexems, int pos, bool assertOnUnknownType,
                                     out string typeName, out string varName, out Lexems initElements)
     {
@@ -207,6 +248,13 @@ public sealed partial class Parser
         return pos;
     }
 
+    /// <summary>
+    /// Extract function body in a list of lexems
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="blockLexems">Function body lexems</param>
+    /// <returns>Position of a next lexem</returns>
     private int ExtractBlock(Lexems lexems, int pos, out Lexems blockLexems)
     {
         Compilation.Assert(lexems[pos].source == "{", "Did you forget '{' ?", lexems[pos].line);
@@ -243,6 +291,9 @@ public sealed partial class Parser
         return pos;
     }
 
+    /// <summary>
+    /// Reference to all program elements (functions, types, priorities, convertions, etc)
+    /// </summary>
     LanguageSymbols m_symbols = new LanguageSymbols();
     public static int CurrentLine;
 }

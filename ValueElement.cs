@@ -10,7 +10,7 @@ public sealed class ElementResultType//TODO: Operation result
     public string ResultType;
 
     //Function
-    public LanguageFunction FunctionType;
+    //public LanguageFunction FunctionType;
     //public List<ElementResultTypePart> ResultTypes = new List<ElementResultTypePart>();
 }
 

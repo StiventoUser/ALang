@@ -1,8 +1,15 @@
 using System;
 using System.Collections.Generic;
 
+/// <summary>
+/// Execute program
+/// </summary>
 public sealed class Interpreter
 {
+    /// <summary>
+    /// Execute list of instructions
+    /// </summary>
+    /// <param name="genOperations"></param>
     public void Run(GeneratorOutput genOperations)
     {
         GenOp genOp;

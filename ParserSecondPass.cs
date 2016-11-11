@@ -5,27 +5,61 @@ using System.Linq;
 
 using Lexems = System.Collections.Generic.List<Lexem>;
 
+/// <summary>
+/// It'll be passed to generator
+/// </summary>
 sealed public class ParserOutput
 {
+    /// <summary>
+    /// List of functions' trees
+    /// </summary>
     public List<FunctionElement> Functions = new List<FunctionElement>();
 }
 
+/// <summary>
+/// Flags to change an expression parsing 
+/// </summary>
 [Flags]
 public enum ExpressionFlags
 {
-    None = 0,//Default, no flags
-    AllowAutoDefault = 1,//default keyword, compiler detects skipped value
-    AllowDefaultValue = 2,//default(Type), use default type value
-    OperationRequired = 4//Can expression use only values without operators 
+    /// <summary>
+    /// Default, no flags
+    /// </summary>
+    None = 0,
+    
+    /// <summary>
+    /// Default keyword, compiler detects skipped value
+    /// </summary>
+    AllowAutoDefault = 1,
+    
+    /// <summary>
+    /// Default(Type), use default type value
+    /// </summary>
+    AllowDefaultValue = 2,
+    
+    /// <summary>
+    /// Can expression use only values without operators 
+    /// </summary>
+    OperationRequired = 4
 }
 
+/// <summary>
+/// Converts lexems into tree
+/// </summary>
 public sealed partial class Parser
 {
+    /// <summary>
+    /// Returns parse result
+    /// </summary>
+    /// <returns></returns>
     public ParserOutput GetParserOutput()
     {
         return m_parserOutput;
     }
 
+    /// <summary>
+    /// Parse prepared data. It's called from first pass
+    /// </summary>
     private void ParseSecondPass()
     {
         //Parse all declarations
@@ -41,6 +75,10 @@ public sealed partial class Parser
         }
     }
 
+    /// <summary>
+    /// Parse function default arguments and save it before body parsing
+    /// </summary>
+    /// <param name="funcInfo">Parsed function</param>
     private void ParseFunctionDefaultVals(Parser1To2Pass.FunctionInfo funcInfo)
     {
         ValElement valElement;
@@ -60,6 +98,11 @@ public sealed partial class Parser
         }
         m_symbols.UpdateFunction(funcInfo.Info);
     }
+
+    /// <summary>
+    /// Parse function body
+    /// </summary>
+    /// <param name="funcInfo">Function to parse</param>
     private void ParseFunction(Parser1To2Pass.FunctionInfo funcInfo)
     {
         FunctionElement funcElem = new FunctionElement();
@@ -68,16 +111,16 @@ public sealed partial class Parser
         StatementListElement statements = new StatementListElement();
         TreeElement element;
 
-        m_currentStatement.Push(statements);
+        m_currentBlock.Push(statements);
 
         if(funcInfo.FuncLexems.Count > 0)
         {
             for(int i = 0, end = funcInfo.FuncLexems.Count;;)
             {
                 i = ParseStatement(funcInfo.FuncLexems, i, out element);
-                if(element != null)//if null => ignore (block)
+                if(element != null)//if null => ignore (block element)
                 {
-                    m_currentStatement.Peek().AddChild(element);
+                    m_currentBlock.Peek().AddChild(element);
                 }
 
                 if(i >= end)
@@ -89,9 +132,16 @@ public sealed partial class Parser
 
         m_parserOutput.Functions.Add(funcElem);
 
-        m_currentStatement.Pop();
+        m_currentBlock.Pop();
     }
 
+    /// <summary>
+    /// Find and build statement. If there are no statements it will parse expression.
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="elem">Statement builded on lexems. null if it's a block</param>
+    /// <returns>Position of a next lexem</returns>
     private int ParseStatement(Lexems lexems, int pos, out TreeElement elem)
     {
         if(m_symbols.IsTypeExist(lexems[pos].source))
@@ -104,7 +154,9 @@ public sealed partial class Parser
         }
         else if(lexems[pos].source == "}")
         {
-            m_currentStatement.Pop();
+            Compilation.Assert(m_currentBlock.Count > 0, "Unexpected '}'. Did you forget '{' ?", pos);
+
+            m_currentBlock.Pop();
             elem = null;
             return ++pos;
         }
@@ -134,12 +186,20 @@ public sealed partial class Parser
             return pos;
         }
     }
+
+    /// <summary>
+    /// Add new block
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="elem">Statement builded on lexems. Always null</param>
+    /// <returns>Position of a next lexem</returns>
     private int ParseBlock(Lexems lexems, int pos, out TreeElement elem)
     {
         StatementListElement block = new StatementListElement();
 
-        m_currentStatement.Peek().AddChild(block);
-        m_currentStatement.Push(block);
+        m_currentBlock.Peek().AddChild(block);
+        m_currentBlock.Push(block);
 
         ++pos;//skip '{'
 
@@ -147,6 +207,14 @@ public sealed partial class Parser
 
         return pos;
     }
+
+    /// <summary>
+    /// Builds variable declaration element (with optional initialization)
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="elem">Element builded on lexems</param>
+    /// <returns>Position of a next lexem</returns>
     private int ParseVarDeclaration(Lexems lexems, int pos, out TreeElement elem)
     {
         MultipleVarDeclarationElement multipleDecl = new MultipleVarDeclarationElement();
@@ -236,11 +304,20 @@ public sealed partial class Parser
         }
 
         elem = multipleDecl;
-        m_currentStatement.Peek().LocalVariables.AddRange(multipleDecl.GetVars());
+        m_currentBlock.Peek().LocalVariables.AddRange(multipleDecl.GetVars());
 
         return pos;
     }
 
+    /// <summary>
+    /// Build expression element
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="endPos">Position at which function breaks. Pass -1 to parse until the end</param>
+    /// <param name="flags">Control flags. ExpressionFlags.None to ignore all flags</param>
+    /// <param name="elem"></param>
+    /// <returns>Position of a next lexem</returns>
     private int ParseExpression(Lexems lexems, int pos, int endPos,
                                 ExpressionFlags flags, 
                                 out ValElement elem)
@@ -378,6 +455,15 @@ public sealed partial class Parser
 
         return pos;
     }
+
+    /// <summary>
+    /// Build expression value. It's called from ParseExpression
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="flags">Control flags. ExpressionFlags.None to ignore all flags</param>
+    /// <param name="elem">Builded value element. null if it's not a value</param>
+    /// <returns>Position of a next lexem</returns>
     private int ParseExpressionValue(Lexems lexems, int pos, ExpressionFlags flags, out ValElement elem) 
     {
         MultipleValElement multipleVals = new MultipleValElement();
@@ -477,6 +563,12 @@ public sealed partial class Parser
         return pos;
     }
 
+    /// <summary>
+    /// Takes value and insert it in a operation
+    /// </summary>
+    /// <param name="operation">Used operation</param>
+    /// <param name="value">Used value</param>
+    /// <param name="right">If true a value will be inserted as right operand, false - as left</param>
     private void InsertValInTree(OperationElement operation, ValElement value, bool right = true)
     {
         if(right)
@@ -520,6 +612,13 @@ public sealed partial class Parser
             }
         }
     }
+
+    /// <summary>
+    /// Insert operation in a operation tree using priorities
+    /// </summary>
+    /// <param name="lastOperation">Previous builded operation</param>
+    /// <param name="operation">Current operation</param>
+    /// <param name="rootOperation">Root operation of a tree</param>
     private void InsertOperationInTree<T>(ref OperationElement lastOperation, 
                                           ref T operation, 
                                           ref OperationElement rootOperation)
@@ -548,6 +647,14 @@ public sealed partial class Parser
         }
     }
 
+    /// <summary>
+    /// Build list of expression separated by comma
+    /// </summary>
+    /// <param name="lexems">List of lexems</param>
+    /// <param name="pos">Position of current parsed lexem</param>
+    /// <param name="flags">Control flags. ExpressionFlags.None to ignore all flags</param>
+    /// <param name="elements">Builded expressions</param>
+    /// <returns>Position of a next lexem</returns>
     private int ExtractSeparatedExpressions(Lexems lexems, int pos, ExpressionFlags flags,
                                             out List<ValElement> elements)
     {
@@ -597,8 +704,23 @@ public sealed partial class Parser
         return pos;
     }
 
+    /// <summary>
+    /// Reference to processing function
+    /// </summary>
     private FunctionElement m_currentFunction;
-    private Stack<StatementListElement> m_currentStatement = new Stack<StatementListElement>();
+
+    /// <summary>
+    /// List of processing blocks
+    /// </summary>
+    private Stack<StatementListElement> m_currentBlock = new Stack<StatementListElement>();
+
+    /// <summary>
+    /// It's saved at first pass
+    /// </summary>
     private List<Parser1To2Pass.FunctionInfo> m_foundedFunctions = new List<Parser1To2Pass.FunctionInfo>();
+
+    /// <summary>
+    /// It store program tree that is used in a generator
+    /// </summary>
     private ParserOutput m_parserOutput = new ParserOutput();
 }
