@@ -39,7 +39,11 @@ public sealed class Lexer
 
     private int FindLexerPart(string source, int pos)
     {
-        if(Char.IsLetter(source[pos]))
+        if(source[pos] == '/' && source[pos+1] == '/')
+        {
+            return RemoveComment(source, pos);
+        }
+        else if(Char.IsLetter(source[pos]))
         {
             return ReadWord(source, pos);
         }
@@ -62,10 +66,6 @@ public sealed class Lexer
                 m_currentLine++;
             }
             return pos + 1;
-        }
-        if(source[pos] == '/' && source[pos+1] == '/')
-        {
-            return RemoveComment(source, pos);
         }
         else
         {
