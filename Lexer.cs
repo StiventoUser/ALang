@@ -63,12 +63,24 @@ public sealed class Lexer
             }
             return pos + 1;
         }
+        if(source[pos] == '/' && source[pos+1] == '/')
+        {
+            return RemoveComment(source, pos);
+        }
         else
         {
             throw new System.Exception("Unknown lexem: " + source[pos]);
         }
     }
 
+    private int RemoveComment(string source, int pos)
+    {
+        pos += 2;//skip '//'
+
+        while(source[pos] != '\n')
+            ++pos;
+        return ++pos;
+    }
     private int ReadWord(string source, int pos)
     {
         StringBuilder builder = new StringBuilder();
