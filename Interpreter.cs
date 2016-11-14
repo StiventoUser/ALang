@@ -4,7 +4,7 @@ using System.Collections.Generic;
 /// <summary>
 /// Execute program
 /// </summary>
-public sealed class Interpreter
+public unsafe sealed class Interpreter
 {
     /// <summary>
     /// Execute list of instructions
@@ -59,6 +59,11 @@ public sealed class Interpreter
                 case GenCodes.Negate:
                     m_stack.Push(-m_stack.Pop());
                     break;
+                case GenCodes.CallFunc:
+                    {
+
+                    }
+                    break;
                 case GenCodes.Print://TODO: temporary
                     Console.WriteLine("Value: " + m_stack.Pop());
                     break;
@@ -66,6 +71,7 @@ public sealed class Interpreter
         }
         
     }
-    Stack<int> m_stack = new Stack<int>();
+    byte[] m_stack = new byte[CompilationSettings.StackSize];
+    int m_stackPointer = 0;
     List<int> m_localVars = new List<int>();
 }

@@ -51,13 +51,18 @@ public sealed class LanguageFunction
         /// <summary>
         /// Argument default value. Can be null
         /// </summary>
-        public ValElement DefaultVal;
+        public ValueElement DefaultVal;
     }
 
     /// <summary>
     /// Function name
     /// </summary>
     public string Name;
+
+    /// <summary>
+    /// Function name with arguments types
+    /// </summary>
+    public string BuildName;
 
     /// <summary>
     /// Function arguments
@@ -107,6 +112,7 @@ public sealed class LanguageSymbols
         {
             Compilation.WriteCritical("Language symbols have been already created");
         }
+
         m_this = this;
     }
 
@@ -118,10 +124,6 @@ public sealed class LanguageSymbols
     {
         get
         {
-            if(m_this != null)
-            {
-                Compilation.WriteCritical("Language symbols aren't exist");
-            }
             return m_this; 
         }
     }
@@ -191,7 +193,7 @@ public sealed class LanguageSymbols
     }
 
     /// <summary>
-    /// Checks is function passed with name and arguments exist
+    /// Checks is function passed with name and arguments exist. Argument type can be null
     /// </summary>
     /// <param name="name"></param>
     /// <param name="args"></param>
@@ -199,11 +201,13 @@ public sealed class LanguageSymbols
     public bool IsFunctionExist(string name, IList<string> args)
     {
         return m_userFunctions.Exists( func => func.Name == name &&
-                                        func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeInfo.Name == arg2 ) );
+                                        func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeInfo.Name == arg2 ||
+                                                                                       (String.IsNullOrEmpty(arg2) && arg1.DefaultVal != null)
+                                                                ) );
     }
 
     /// <summary>
-    /// Checks is function passed with name and arguments exist
+    /// Checks is function passed with name and arguments exist. This function doesn't expect a default argument(null)
     /// </summary>
     /// <param name="name"></param>
     /// <param name="args"></param>
@@ -216,6 +220,27 @@ public sealed class LanguageSymbols
     }
 
     /// <summary>
+    /// Returns function by name and arguments type. Argument type can be null
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    public LanguageFunction GetFunction(string name, IList<string> args)
+    {
+        var functions = m_userFunctions.Where( func => func.Name == name &&
+                                        func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeInfo.Name == arg2 || 
+                                                                                       (String.IsNullOrEmpty(arg2) && arg1.DefaultVal != null)
+                                                                ) ).ToList();
+
+        Compilation.Assert(functions.Count != 0, "No function isn't founded with name '" + name + "' and arguments' types["
+                                                 + args.MergeInString() + "]", -1);
+        Compilation.Assert(functions.Count == 1, "More than one functions are founded with name + '" + name + "'"
+                                                 + " and argumentss' types [" + args.MergeInString() + "] . It's a bug", -1);
+
+        return functions.First();
+    }
+
+    /// <summary>
     /// Updates function information in symbols or add new function
     /// </summary>
     /// <param name="function"></param>
@@ -225,7 +250,28 @@ public sealed class LanguageSymbols
                                     func.Arguments.CompareTo(function.Arguments, 
                                         (arg1, arg2) => arg1.TypeInfo.Name == arg2.TypeInfo.Name ) );
                                              
+        UpdateFunctionBuildName(function);
         m_userFunctions.Add(function);
+    }
+
+    /// <summary>
+    /// Returns function build name by name and arguments
+    /// </summary>
+    /// <param name="function"></param>
+    /// <returns></returns>
+    public string GetFunctionBuildName(LanguageFunction function)
+    {
+        return string.Format("{0}_@{1}", function.Name, function.Arguments.Select(arg => arg.ArgName).Aggregate(
+                                                                (id1, id2) => id1 + "@" + id2));
+    }
+
+    /// <summary>
+    /// Updates function build name by name and arguments
+    /// </summary>
+    /// <param name="function"></param>
+    public void UpdateFunctionBuildName(LanguageFunction function)
+    {
+        function.BuildName = GetFunctionBuildName(function);
     }
 
     /// <summary>
@@ -240,6 +286,8 @@ public sealed class LanguageSymbols
             return false;
         }
 
+        UpdateFunctionBuildName(function);
+        
         m_userFunctions.Add(function);
 
         return true;
@@ -278,13 +326,25 @@ public sealed class LanguageSymbols
     /// <returns></returns>
     public string GetMostPrecise(List<string> types)
     {
-        var unsupported = types.Where(type => !m_preciseLevel.Contains(type));
-        if(unsupported.Any())
+        bool allSupported = types.All(type => m_preciseLevel.Contains(type));
+        if(!allSupported)
         {
-            Compilation.WriteError("Type(s) [" + unsupported.Aggregate((type1, type2) => type1 + ", " + type2)
+            Compilation.WriteError("Type(s) [" + types.Where(type => !m_preciseLevel.Contains(type))
+                                                      .Aggregate((type1, type2) => type1 + ", " + type2)
                                     + "] do(es) not support precission", -1);
         }
         return types.OrderBy(type => m_preciseLevel.IndexOf(type)).First();
+    }
+
+    /// <summary>
+    /// Returns most precise type from passed
+    /// </summary>
+    /// <param name="first"></param>
+    /// <param name="second"></param>
+    /// <returns></returns>
+    public string GetMostPrecise(string first, string second)
+    {
+        return GetMostPrecise(new List<string>{first, second});
     }
 
     /// <summary>

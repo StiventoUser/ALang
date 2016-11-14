@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public static class OperationPriority
 {
@@ -27,7 +28,17 @@ public static class OperationPriority
     };
 }
 
-public abstract class OperationElement : ValElement
+public static class OperationHelper
+{
+    public static ElementResultTypePart GetMostPrecise(ElementResultTypePart first, ElementResultTypePart second)
+    {
+        string mostPreciseName = LanguageSymbols.Instance.GetMostPrecise(first.ResultType, second.ResultType);
+
+        return first.ResultType == mostPreciseName ? first : second;
+    }
+}
+
+public abstract class OperationElement : ValueElement
 {
     public abstract bool HasLeftOperand{ get; }
     public abstract bool HasRightOperand{ get; }
@@ -41,7 +52,9 @@ public class BinaryPlusElement : OperationElement
     {
         get
         {
-            return Math.Max(Child<ValElement>(0).ValCount, Child<ValElement>(1).ValCount);  
+            if(Result == null)
+                UpdateResultValue();
+            return Result.ResultTypes.Count;
         }
     }
     public override bool HasLeftOperand{ get{ return true; } }
@@ -49,56 +62,11 @@ public class BinaryPlusElement : OperationElement
     
     public override string OperationName{ get{ return "b+"; } }
     public override int Priority{ get{ return OperationPriority.Priorities[OperationName]; } }
-    /*private ElementResultType GetResultOf()
-    {
-        var result1 = Value1.Result;
-        var result2 = Value2.Result;
-
-        if(result1.IsFunction || result2.IsFunction)
-        {
-            Compilation.WriteError("Operator '+': function can't be used as operand", Line);
-        }
-
-        string fromType;
-        string resultType;
-
-        if(Value1.Result != Value2.Result)
-        {
-            resultType = LanguageSymbols.Instance.GetMostPrecise(new List<string>{result1.ResultType, result2.ResultType});
-
-            fromType = result1.ResultType == resultType ? result2.ResultType : result1.ResultType;
-        }
-        else
-        {
-            fromType = resultType = result1.ResultType;
-        }
-
-        var castInfo = LanguageSymbols.Instance.GetCastInfo(fromType, resultType);
-
-        if(castInfo == null)
-        {
-            Compilation.WriteError("No cast info: from '" + fromType + "' to '" + resultType + "'.", Line);
-        }
-        if(castInfo.CanCast)
-        {
-            if(!String.IsNullOrEmpty(castInfo.WarningMessage))
-            {
-                Compilation.WriteWarning("Cast warning: '" + castInfo.WarningMessage + "'.", Line);
-            }
-
-            return new ElementResultType{ IsFunction = false, ResultType = resultType }; 
-        }
-        else
-        {
-            Compilation.WriteError("Cast forbidden: from '" + fromType + "' to '" + resultType + "'.", Line);
-            return null;//only for compiler
-        }
-    }*/
 
     public override void GenerateValue(Generator generator, int index)
     {
-        Child<ValElement>(0).GenerateValue(generator, index);
-        Child<ValElement>(1).GenerateValue(generator, index);
+        Child<ValueElement>(0).GenerateValue(generator, index);
+        Child<ValueElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Add, 0, null);
     }
@@ -109,6 +77,30 @@ public class BinaryPlusElement : OperationElement
             GenerateValue(generator, i);
         }
     }
+
+    public override void PrepareBeforeGenerate()
+    {
+        //TODO: operands count assert
+        UpdateResultValue();
+    }
+    protected override void UpdateResultValue()
+    {
+        var leftChild = Child<ValueElement>(0);
+        var rightChild = Child<ValueElement>(1);
+
+        Compilation.Assert(leftChild.ValCount == rightChild.ValCount, 
+                            "Values count at left of operation (" + leftChild.ValCount +
+                            ") must be equal count at right (" + rightChild.ValCount + ")", Line);
+
+        Result = ElementResultType.Create
+        (
+            leftChild.Result.ResultTypes.Zip(rightChild.Result.ResultTypes, (left, right) => 
+            {
+                return OperationHelper.GetMostPrecise(left, right);
+            }
+            )
+        );
+    }
 }
 public class BinaryMinusElement : OperationElement
 {
@@ -116,7 +108,9 @@ public class BinaryMinusElement : OperationElement
     {
         get
         {
-            return Math.Max(Child<ValElement>(0).ValCount, Child<ValElement>(1).ValCount);  
+            if(Result == null)
+                UpdateResultValue();
+            return Result.ResultTypes.Count;
         }
     }
     public override bool HasLeftOperand{ get{ return true; } }
@@ -126,8 +120,8 @@ public class BinaryMinusElement : OperationElement
 
     public override void GenerateValue(Generator generator, int index)
     {
-        Child<ValElement>(0).GenerateValue(generator, index);
-        Child<ValElement>(1).GenerateValue(generator, index);
+        Child<ValueElement>(0).GenerateValue(generator, index);
+        Child<ValueElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Subtract, 0, null);
     }
@@ -138,6 +132,30 @@ public class BinaryMinusElement : OperationElement
             GenerateValue(generator, i);
         }
     }
+
+    public override void PrepareBeforeGenerate()
+    {
+        //TODO: operands count assert
+        UpdateResultValue();
+    }
+    protected override void UpdateResultValue()
+    {
+        var leftChild = Child<ValueElement>(0);
+        var rightChild = Child<ValueElement>(1);
+
+        Compilation.Assert(leftChild.ValCount == rightChild.ValCount, 
+                            "Values count at left of operation (" + leftChild.ValCount +
+                            ") must be equal count at right (" + rightChild.ValCount + ")", Line);
+
+        Result = ElementResultType.Create
+        (
+            leftChild.Result.ResultTypes.Zip(rightChild.Result.ResultTypes, (left, right) => 
+            {
+                return OperationHelper.GetMostPrecise(left, right);
+            }
+            )
+        );
+    }
 }
 public class BinaryMultiplicationElement : OperationElement
 {
@@ -145,7 +163,9 @@ public class BinaryMultiplicationElement : OperationElement
     {
         get
         {
-            return Math.Max(Child<ValElement>(0).ValCount, Child<ValElement>(1).ValCount);  
+            if(Result == null)
+                UpdateResultValue();
+            return Result.ResultTypes.Count;
         }
     }
     public override bool HasLeftOperand{ get{ return true; } }
@@ -155,8 +175,8 @@ public class BinaryMultiplicationElement : OperationElement
 
     public override void GenerateValue(Generator generator, int index)
     {
-        Child<ValElement>(0).GenerateValue(generator, index);
-        Child<ValElement>(1).GenerateValue(generator, index);
+        Child<ValueElement>(0).GenerateValue(generator, index);
+        Child<ValueElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Multiply, 0, null);
     }
@@ -167,6 +187,30 @@ public class BinaryMultiplicationElement : OperationElement
             GenerateValue(generator, i);
         }
     }
+
+    public override void PrepareBeforeGenerate()
+    {
+        //TODO: operands count assert
+        UpdateResultValue();
+    }
+    protected override void UpdateResultValue()
+    {
+        var leftChild = Child<ValueElement>(0);
+        var rightChild = Child<ValueElement>(1);
+
+        Compilation.Assert(leftChild.ValCount == rightChild.ValCount, 
+                            "Values count at left of operation (" + leftChild.ValCount +
+                            ") must be equal count at right (" + rightChild.ValCount + ")", Line);
+
+        Result = ElementResultType.Create
+        (
+            leftChild.Result.ResultTypes.Zip(rightChild.Result.ResultTypes, (left, right) => 
+            {
+                return OperationHelper.GetMostPrecise(left, right);
+            }
+            )
+        );
+    }
 }
 public class BinaryDivisionElement : OperationElement
 {
@@ -174,7 +218,9 @@ public class BinaryDivisionElement : OperationElement
     {
         get
         {
-            return Math.Max(Child<ValElement>(0).ValCount, Child<ValElement>(1).ValCount);  
+            if(Result == null)
+                UpdateResultValue();
+            return Result.ResultTypes.Count;
         }
     }
     public override bool HasLeftOperand{ get{ return true; } }
@@ -184,8 +230,8 @@ public class BinaryDivisionElement : OperationElement
 
     public override void GenerateValue(Generator generator, int index)
     {
-        Child<ValElement>(0).GenerateValue(generator, index);
-        Child<ValElement>(1).GenerateValue(generator, index);
+        Child<ValueElement>(0).GenerateValue(generator, index);
+        Child<ValueElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Divide, 0, null);
     }
@@ -196,6 +242,30 @@ public class BinaryDivisionElement : OperationElement
             GenerateValue(generator, i);
         }
     }
+
+    public override void PrepareBeforeGenerate()
+    {
+        //TODO: operands count assert
+        UpdateResultValue();
+    }
+    protected override void UpdateResultValue()
+    {
+        var leftChild = Child<ValueElement>(0);
+        var rightChild = Child<ValueElement>(1);
+
+        Compilation.Assert(leftChild.ValCount == rightChild.ValCount, 
+                            "Values count at left of operation (" + leftChild.ValCount +
+                            ") must be equal count at right (" + rightChild.ValCount + ")", Line);
+
+        Result = ElementResultType.Create
+        (
+            leftChild.Result.ResultTypes.Zip(rightChild.Result.ResultTypes, (left, right) => 
+            {
+                return OperationHelper.GetMostPrecise(left, right);
+            }
+            )
+        );
+    }
 }
 public class BinaryExponentiationElement : OperationElement
 {
@@ -203,7 +273,9 @@ public class BinaryExponentiationElement : OperationElement
     {
         get
         {
-            return Math.Max(Child<ValElement>(0).ValCount, Child<ValElement>(1).ValCount);  
+            if(Result == null)
+                UpdateResultValue();
+            return Result.ResultTypes.Count;
         }
     }
     public override bool HasLeftOperand{ get{ return true; } }
@@ -213,8 +285,8 @@ public class BinaryExponentiationElement : OperationElement
 
     public override void GenerateValue(Generator generator, int index)
     {
-        Child<ValElement>(0).GenerateValue(generator, index);
-        Child<ValElement>(1).GenerateValue(generator, index);
+        Child<ValueElement>(0).GenerateValue(generator, index);
+        Child<ValueElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Exponent, 0, null);
     }
@@ -225,6 +297,30 @@ public class BinaryExponentiationElement : OperationElement
             GenerateValue(generator, i);
         }
     }
+
+    public override void PrepareBeforeGenerate()
+    {
+        //TODO: operands count assert
+        UpdateResultValue();
+    }
+    protected override void UpdateResultValue()
+    {
+        var leftChild = Child<ValueElement>(0);
+        var rightChild = Child<ValueElement>(1);
+
+        Compilation.Assert(leftChild.ValCount == rightChild.ValCount, 
+                            "Values count at left of operation (" + leftChild.ValCount +
+                            ") must be equal count at right (" + rightChild.ValCount + ")", Line);
+
+        Result = ElementResultType.Create
+        (
+            leftChild.Result.ResultTypes.Zip(rightChild.Result.ResultTypes, (left, right) => 
+            {
+                return OperationHelper.GetMostPrecise(left, right);
+            }
+            )
+        );
+    }
 }
 public class UnaryMinusElement : OperationElement
 {
@@ -232,7 +328,9 @@ public class UnaryMinusElement : OperationElement
     {
         get
         {
-            return Child<ValElement>(1).ValCount;  
+            if(Result == null)
+                UpdateResultValue();
+            return Result.ResultTypes.Count;
         }
     }
     public override bool HasLeftOperand{ get{ return false; } }
@@ -242,7 +340,7 @@ public class UnaryMinusElement : OperationElement
            
     public override void GenerateValue(Generator generator, int index)
     {
-        Child<ValElement>(1).GenerateValue(generator, index);
+        Child<ValueElement>(1).GenerateValue(generator, index);
 
         generator.AddOp(GenCodes.Negate, 0, null);
     }
@@ -253,6 +351,16 @@ public class UnaryMinusElement : OperationElement
             GenerateValue(generator, i);
         }
     }
+
+    public override void PrepareBeforeGenerate()
+    {
+        //TODO: operands count assert
+        UpdateResultValue();
+    }
+    protected override void UpdateResultValue()
+    {
+        Result = ElementResultType.Create(Child<ValueElement>(1).Result.ResultTypes);
+    }
 }
 
 public class CopyElement : OperationElement
@@ -261,7 +369,9 @@ public class CopyElement : OperationElement
     {
         get
         {
-            return Math.Max(Child<ValElement>(0).ValCount, Child<ValElement>(1).ValCount);  
+            if(Result == null)
+                UpdateResultValue();
+            return Result.ResultTypes.Count; 
         }
     }
     public override bool HasLeftOperand{ get{ return true; } }
@@ -271,8 +381,8 @@ public class CopyElement : OperationElement
 
     public override void GenerateValue(Generator generator, int index)
     {
-        ValElement leftOperand = (ValElement)Child(0);
-        ValElement rightOperand = (ValElement)Child(1);
+        ValueElement leftOperand = (ValueElement)Child(0);
+        ValueElement rightOperand = (ValueElement)Child(1);
 
         Compilation.Assert(leftOperand.ValCount == rightOperand.ValCount,
                            "Each lvalue is assigned to only one rvalue", Line); 
@@ -289,5 +399,15 @@ public class CopyElement : OperationElement
         {
             GenerateValue(generator, i);
         }
+    }
+
+    public override void PrepareBeforeGenerate()
+    {
+        //TODO: operands count assert
+        UpdateResultValue();
+    }
+    protected override void UpdateResultValue()
+    {
+        Result = ElementResultType.Create(Child<ValueElement>(0).Result.ResultTypes);
     }
 } 

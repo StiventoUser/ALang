@@ -81,7 +81,7 @@ public sealed partial class Parser
     /// <param name="funcInfo">Parsed function</param>
     private void ParseFunctionDefaultVals(Parser1To2Pass.FunctionInfo funcInfo)
     {
-        ValElement valElement;
+        ValueElement valElement;
 
         for(int i = 0, end = funcInfo.ArgInitLexems.Count; i < end; ++i)
         {
@@ -107,6 +107,8 @@ public sealed partial class Parser
     {
         FunctionElement funcElem = new FunctionElement();
         m_currentFunction = funcElem;
+        
+        funcElem.Info = funcInfo.Info;
 
         StatementListElement statements = new StatementListElement();
         TreeElement element;
@@ -176,7 +178,7 @@ public sealed partial class Parser
         }
         else
         {
-            ValElement expr;  
+            ValueElement expr;  
             pos = ParseExpression(lexems, pos, -1, ExpressionFlags.OperationRequired | ExpressionFlags.AllowDefaultValue,
                                   out expr);
             elem = expr;
@@ -279,7 +281,7 @@ public sealed partial class Parser
         }
         else
         {
-            ValElement initElements;
+            ValueElement initElements;
             pos = ParseExpression(lexems, pos, -1, ExpressionFlags.AllowDefaultValue | ExpressionFlags.AllowAutoDefault,
                                   out initElements); 
             //TODO: auto default
@@ -291,7 +293,7 @@ public sealed partial class Parser
 
             for(int i = 0, end = multipleDecl.GetVars().Count; i < end; ++i)
             {
-                multipleDecl.GetVar(i).InitVal = (ValElement)initElements.Child(i);
+                multipleDecl.GetVar(i).InitVal = (ValueElement)initElements.Child(i);
             }
 
             Compilation.Assert(lexems[pos].source == ";", "Did you forget ';' ?", lexems[pos].line);
@@ -320,13 +322,13 @@ public sealed partial class Parser
     /// <returns>Position of a next lexem</returns>
     private int ParseExpression(Lexems lexems, int pos, int endPos,
                                 ExpressionFlags flags, 
-                                out ValElement elem)
+                                out ValueElement elem)
     {    
         Lexem currentLexem;
 
         OperationElement lastOperation = null;
         OperationElement rootOperation = null;
-        ValElement lastValElement = null;
+        ValueElement lastValElement = null;
 
         bool breakCycle = false;
 
@@ -438,7 +440,7 @@ public sealed partial class Parser
  
         if(rootOperation == null)
         {
-            if(flags.HasFlag(ExpressionFlags.OperationRequired))
+            if(flags.HasFlag(ExpressionFlags.OperationRequired) && !(lastValElement is FunctionCallElement))
             {
                 Compilation.WriteError("Expression must contain at least one operator", lexems[pos].line);
             }
@@ -464,14 +466,13 @@ public sealed partial class Parser
     /// <param name="flags">Control flags. ExpressionFlags.None to ignore all flags</param>
     /// <param name="elem">Builded value element. null if it's not a value</param>
     /// <returns>Position of a next lexem</returns>
-    private int ParseExpressionValue(Lexems lexems, int pos, ExpressionFlags flags, out ValElement elem) 
+    private int ParseExpressionValue(Lexems lexems, int pos, ExpressionFlags flags, out ValueElement elem) 
     {
         MultipleValElement multipleVals = new MultipleValElement();
         
         if(lexems[pos].source == "(")
         {
-            ++pos;
-            List<ValElement> values;
+            List<ValueElement> values;
 
             pos = ExtractSeparatedExpressions(lexems, pos, flags, out values);
 
@@ -493,7 +494,7 @@ public sealed partial class Parser
             elem = val;
             return pos;
         }
-        else if(m_currentFunction.LocalVars.Any(local => local.VarName == lexems[pos].source))
+        else if(m_currentFunction.LocalVars.Any(local => local.VarName == lexems[pos].source) && lexems[pos+1].source != "(")
         {
             var val = new VarGetSetValElement{ VarName = lexems[pos].source };
 
@@ -504,22 +505,36 @@ public sealed partial class Parser
         else if(m_foundedFunctions.Any(funcInfo => funcInfo.Info.Name == lexems[pos].source))
         {
             FunctionCallElement callElement = new FunctionCallElement();
+
+            string funcName = lexems[pos].source;
             
             ++pos;
-            List<ValElement> values;
+            List<ValueElement> values;
 
             pos = ExtractSeparatedExpressions(lexems, pos, 
                                               flags | ExpressionFlags.AllowAutoDefault,
                                               out values);
+            
+            if(values.Count == 1 && values[0].ValCount > 1)
+            {
+                values = values[0].Children().Select(child => (ValueElement)child).ToList();
+            }
+
+            callElement.FunctionInfo = m_symbols.GetFunction(funcName, values.Select(val => val.Result.ResultTypes[0].ResultType).ToList());
 
             for(int i = 0, end = values.Count; i < end; ++i)
             {
                 if(values[i] == null)
                 {
-                    //TODO: finish
-                    //TODO: all value elements must contain ResultType
+                    values[i] = callElement.FunctionInfo.Arguments[i].DefaultVal;
                 }
             }
+
+            callElement.CallArguments = values;
+
+            elem = callElement;
+
+            return pos;
         }
         else if(lexems[pos].source == "default")
         {
@@ -569,7 +584,7 @@ public sealed partial class Parser
     /// <param name="operation">Used operation</param>
     /// <param name="value">Used value</param>
     /// <param name="right">If true a value will be inserted as right operand, false - as left</param>
-    private void InsertValInTree(OperationElement operation, ValElement value, bool right = true)
+    private void InsertValInTree(OperationElement operation, ValueElement value, bool right = true)
     {
         if(right)
         {
@@ -656,11 +671,13 @@ public sealed partial class Parser
     /// <param name="elements">Builded expressions</param>
     /// <returns>Position of a next lexem</returns>
     private int ExtractSeparatedExpressions(Lexems lexems, int pos, ExpressionFlags flags,
-                                            out List<ValElement> elements)
+                                            out List<ValueElement> elements)
     {
-        elements = new List<ValElement>();
-        ValElement val;
+        elements = new List<ValueElement>();
+        ValueElement val;
         int currentLevel = 1;
+
+        ++pos;//skip '('
 
         for(int i = pos; currentLevel != 0 && i < lexems.Count;)
         {
@@ -677,7 +694,8 @@ public sealed partial class Parser
                     --currentLevel;
                     if(currentLevel == 0)
                     {
-                        pos = i = ParseExpression(lexems, pos, i, flags, out val) + 1;
+                        pos = i = ParseExpression(lexems, pos, i, flags & (~ExpressionFlags.OperationRequired)
+                                                                | ExpressionFlags.AllowDefaultValue, out val) + 1;
                         elements.Add(val);
                     }
                     else
@@ -688,7 +706,8 @@ public sealed partial class Parser
                 case ",":
                     if(currentLevel == 1)
                     {
-                        pos = i = ParseExpression(lexems, pos, i, flags, out val) + 1;
+                        pos = i = ParseExpression(lexems, pos, i, flags & (~ExpressionFlags.OperationRequired)
+                                                                | ExpressionFlags.AllowDefaultValue, out val) + 1;
                         elements.Add(val);
                     }
                     else

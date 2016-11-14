@@ -9,6 +9,23 @@ public abstract class TreeElement
         get{ return false; }
     } 
 
+    public abstract void GenLowLevel(Generator generator);
+    public virtual void PrepareBeforeGenerate() {}
+
+    public void PrepareTree()
+    {
+        foreach(var child in m_children)
+        {
+            child.PrepareTree();
+        }
+
+        PrepareBeforeGenerate();
+    }
+
+    public IList<TreeElement> Children()
+    {
+        return m_children;
+    }
     public T Child<T>(int index) where T : TreeElement
     {
         CheckChildrenCount(index);
@@ -89,16 +106,10 @@ public abstract class TreeElement
             }
         }
     }
-
-    public abstract void GenLowLevel(Generator generator);
 }
 
 
-<<<<<<< HEAD
-public class PrintCurrentValElement : TreeElement//TODO remove it
-=======
 public class PrintCurrentValElement : TreeElement//TODO: remove it
->>>>>>> temp
 {
     public override void GenLowLevel(Generator generator)
     {

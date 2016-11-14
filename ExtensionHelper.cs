@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 public static class IEnumerableHelper
 {
@@ -17,5 +18,50 @@ public static class IEnumerableHelper
             }
         }
         return true;
+    }
+    public static void IndexForeach<T>(this IEnumerable<T> collection, Action<T, int> func)
+    {
+        int i = 0;
+        foreach(var elem in collection)
+        {
+            func(elem, i);
+            ++i;
+        }
+    }
+    public static IEnumerable<T2> IndexSelect<T, T2>(this IEnumerable<T> collection, Func<T, int, T2> func)
+    {
+        List<T2> list = new List<T2>();
+        int i = 0;
+        foreach(var elem in collection)
+        {
+            list.Add(func(elem, i));
+            ++i;
+        }
+
+        return list;
+    }
+    public static string MergeInString<T>(this IList<T> collection, string delimiter = ", ")
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for(int i = 0, end = collection.Count - 1; i < end; ++i)
+        {
+            builder.Append(collection[i]).Append(delimiter);
+        }
+        builder.Append(collection[collection.Count-1]);
+
+        return builder.ToString();
+    }
+    public static string MergeInString<T>(this IList<T> collection, Func<T, string> func, string delimiter = ", ")
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for(int i = 0, end = collection.Count - 1; i < end; ++i)
+        {
+            builder.Append(func(collection[i])).Append(delimiter);
+        }
+        builder.Append(collection[collection.Count-1]);
+
+        return builder.ToString();
     }
 }

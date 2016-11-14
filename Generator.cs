@@ -9,6 +9,7 @@ public enum GenCodes
     NewLVar, SetLVarVal, GetLVarVal,
     Push, Pop,
     Add, Subtract, Multiply, Divide, Exponent, Negate,
+    CallFunc,
     Meta, Print/*temporary*/
 }
 
@@ -43,11 +44,27 @@ public sealed class Generator
     {
         foreach(var func in parserOutput.Functions)
         {
-            //func.GenLowLevel(this);
+            m_funcList.Add(func.Info.BuildName);
         }
-        parserOutput.Functions[0].GenLowLevel(this);//TODO: normal code generation
+        foreach(var func in parserOutput.Functions)
+        {
+            func.PrepareTree();
+        }
 
-        m_output.Operations = m_operations;
+        
+        foreach(var func in parserOutput.Functions)
+        {
+            m_currentOperations = new List<GenOp>();
+            m_funcOffsets.Add(m_currentOpOffset);
+
+            func.GenLowLevel(this);
+            m_currentOpOffset += m_currentOperations.Count;
+            m_operations.Add(m_currentOperations);
+            
+            m_currentOperations = null;
+        }
+
+        m_output.Operations = BuildOperations();
     }
 
     /// <summary>
@@ -57,6 +74,18 @@ public sealed class Generator
     public GeneratorOutput GetOutput()
     {
         return m_output;
+    } 
+
+    public int GetFunctionIndex(string name)
+    {
+        int index = m_funcList.IndexOf(name);
+
+        if(index == -1)
+        {
+            Compilation.WriteCritical("Function isn't registered in generator. It's a bug");
+        }
+
+        return index;
     }
 
     /// <summary>
@@ -100,7 +129,7 @@ public sealed class Generator
     /// <param name="op"></param>
     public void AddOp(GenOp op)
     {
-        m_operations.Add(op);
+        m_currentOperations.Add(op);
     }
 
     /// <summary>
@@ -111,11 +140,38 @@ public sealed class Generator
     /// <param name="bytes"></param>
     public void AddOp(GenCodes code, int argCount, IList<byte> bytes)
     {
-        m_operations.Add(new GenOp{ Code = code, ArgCount = argCount, Bytes = bytes });
+        m_currentOperations.Add(new GenOp{ Code = code, ArgCount = argCount, Bytes = bytes });
     }
 
-    private List<GenOp> m_operations = new List<GenOp>();
+    private List<GenOp> BuildOperations()
+    {
+        List<GenOp> operations = new List<GenOp>();
+
+        foreach(var i in m_operations)
+        {
+            operations.AddRange(i);
+        }
+
+        int funcIndex;
+        foreach(var op in operations)
+        {
+            if(op.Code == GenCodes.CallFunc)
+            {
+                funcIndex = ByteConverter.New(op.Bytes).GetInt32();
+                op.Bytes = ByteConverter.New().CastInt32(m_funcOffsets[funcIndex]).Bytes;
+            }
+        }
+
+        return operations;
+    }
+
+    private List<List<GenOp>> m_operations = new List<List<GenOp>>();
+    private List<GenOp> m_currentOperations = new List<GenOp>();
     private List<string> m_localVars = new List<string>();
+    private List<string> m_funcList = new List<string>();
+    private List<int> m_funcOffsets = new List<int>();
+
+    private int m_currentOpOffset = 0;
 
     private GeneratorOutput m_output = new GeneratorOutput();
 }
