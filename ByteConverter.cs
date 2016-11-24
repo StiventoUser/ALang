@@ -53,12 +53,37 @@ public sealed class ByteConverter
 
         return this;
     }
+
     /// <summary>
-    /// Int to bytes
+    /// Add byte
     /// </summary>
     /// <param name="val"></param>
     /// <returns></returns>
-    public ByteConverter CastInt32(int val)
+    public ByteConverter CastByte(byte val)
+    {
+        m_bytes.Add(val);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Int32 to bytes
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
+    public ByteConverter CastInt32(Int32 val)
+    {
+        m_bytes.AddRange(BitConverter.GetBytes(val));
+
+        return this;
+    }
+
+    /// <summary>
+    /// Int64 to bytes
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
+    public ByteConverter CastInt64(Int64 val)
     {
         m_bytes.AddRange(BitConverter.GetBytes(val));
 

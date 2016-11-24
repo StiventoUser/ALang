@@ -133,7 +133,8 @@ public class ConstValElement : ValueElement
     public override void GenerateValue(Generator generator, int index)
     {
         generator.AddOp(GenCodes.Push, 2, 
-            ByteConverter.New().CastInt32(1/*type*/).CastInt32(int.Parse(Value)).Bytes);
+            ByteConverter.New().CastInt32(LanguageSymbols.Instance.GetTypeSize(Type))
+                               .CastInt32(int.Parse(Value)).Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -155,7 +156,7 @@ public class VarGetSetValElement : ValueElement
 {
     public override int ValCount{ get{ return 1; } }
 
-    public string VarType//TODO: add in parser
+    public string VarType
     {
         get{ return m_varType; }
         set
@@ -171,18 +172,29 @@ public class VarGetSetValElement : ValueElement
     {
         if(IsSet)
         {
-            generator.AddOp(GenCodes.SetLVarVal, 1,
-                ByteConverter.New().CastInt32(generator.GetLocalVarIndex(VarName)).Bytes);
+            generator.AddOp(GenCodes.SetLVarVal, 2,
+                ByteConverter.New().CastInt32(generator.GetLocalVarIndex(VarType, VarName))
+                                   .CastInt32(LanguageSymbols.Instance.GetTypeSize(VarType))
+                                   .Bytes);
         }
         if(IsGet)
         {
-            generator.AddOp(GenCodes.GetLVarVal, 1, 
-                ByteConverter.New().CastInt32(generator.GetLocalVarIndex(VarName)).Bytes);
+            generator.AddOp(GenCodes.GetLVarVal, 2, 
+                ByteConverter.New().CastInt32(generator.GetLocalVarIndex(VarType, VarName))
+                                   .CastInt32(LanguageSymbols.Instance.GetTypeSize(VarType))
+                                   .Bytes);
         }
     }
 
     public override void PrepareBeforeGenerate()
     {
+        var funcElem = RootParent<FunctionElement>();
+        var variable = funcElem.LocalVars.Find(elem => elem.VarName == VarName);
+
+        Compilation.Assert(variable != null, "Variable '" + VarName + "' isn't exist", -1);
+
+        VarType = variable.VarType;
+
         UpdateResultValue();
     }
     public override void GenLowLevel(Generator generator)
@@ -214,14 +226,14 @@ public class FunctionCallElement : ValueElement
 
     public override void GenerateValue(Generator generator, int index)
     {
+        generator.AddOp(GenCodes.CallFunc, 1, ByteConverter.New()
+                                                .CastInt32(generator.GetFunctionIndex(FunctionInfo.BuildName))
+                                                .Bytes);
+
         foreach(ValueElement i in Enumerable.Reverse(CallArguments))
         {
             i.GenLowLevel(generator);
         }
-
-        generator.AddOp(GenCodes.CallFunc, 1, ByteConverter.New()
-                                                .CastInt32(generator.GetFunctionIndex(FunctionInfo.BuildName))
-                                                .Bytes);
     }
 
     public override void PrepareBeforeGenerate()
@@ -296,7 +308,10 @@ public class VarDeclarationElement : TreeElement
             InitVal.GenLowLevel(generator);
         }
 
-        generator.AddOp(GenCodes.NewLVar, 1, ByteConverter.New().CastInt32(generator.GetLocalVarIndex(VarName)).Bytes);
+        generator.AddOp(GenCodes.NewLVar, 2, 
+            ByteConverter.New().CastInt32(generator.GetLocalVarIndex(VarType, VarName))
+                               .CastInt32(LanguageSymbols.Instance.GetTypeSize(VarType))
+                               .Bytes);
     }
     public void GenLowLevelDelete(Generator generator)
     {

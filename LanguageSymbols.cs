@@ -193,6 +193,35 @@ public sealed class LanguageSymbols
     }
 
     /// <summary>
+    /// Returns type size in bytes
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public int GetTypeSize(string name)
+    {
+        int size;
+        bool ok = m_typesSize.TryGetValue(name, out size);
+        
+        Compilation.Assert(ok, "Type '" + name + "' isn't exist", -1);
+
+        return size;
+    }
+
+    /// <summary>
+    /// Returns default type id
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public byte GetDefaultTypeId(string name)
+    {
+        int index = m_defaultTypes.FindIndex(type => type.Name == name);
+
+        Compilation.Assert(index != -1, "Type '" + name + "' isn't exist", -1);
+
+        return (byte)index;
+    }
+
+    /// <summary>
     /// Checks is function passed with name and arguments exist. Argument type can be null
     /// </summary>
     /// <param name="name"></param>
@@ -261,7 +290,7 @@ public sealed class LanguageSymbols
     /// <returns></returns>
     public string GetFunctionBuildName(LanguageFunction function)
     {
-        return string.Format("{0}_@{1}", function.Name, function.Arguments.Select(arg => arg.ArgName).Aggregate(
+        return string.Format("{0}_@{1}", function.Name, function.Arguments.Select(arg => arg.TypeInfo.Name).Aggregate(
                                                                 (id1, id2) => id1 + "@" + id2));
     }
 
@@ -391,9 +420,9 @@ public sealed class LanguageSymbols
         return m_defaultValOfDefaultTypes[type];
     }
 
-    private static class DefTypesName
+    public static class DefTypesName
     {
-        public enum Index
+        public enum Index : byte
         {
             Int64, Int32, Int16, Int8, Double, Single, String, Bool 
         }
@@ -412,6 +441,13 @@ public sealed class LanguageSymbols
         { DefTypesName.Get(DefTypesName.Index.Int32), 
                            new ConstValElement{ Type = DefTypesName.Get(DefTypesName.Index.Int32), Value = "0" } }
     };
+
+    private Dictionary<string, int> m_typesSize = new Dictionary<string, int>
+    {
+        { DefTypesName.Get(DefTypesName.Index.Int32), 4 },
+        { DefTypesName.Get(DefTypesName.Index.Int8), 1 }
+    };
+
     private List<string> m_preciseLevel = new List<string>
     {
         DefTypesName.Get(DefTypesName.Index.String),

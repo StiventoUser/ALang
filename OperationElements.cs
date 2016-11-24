@@ -68,7 +68,12 @@ public class BinaryPlusElement : OperationElement
         Child<ValueElement>(0).GenerateValue(generator, index);
         Child<ValueElement>(1).GenerateValue(generator, index);
 
-        generator.AddOp(GenCodes.Add, 0, null);
+        generator.AddOp(GenCodes.Add, 1, ByteConverter
+                                            .New()
+                                            .CastByte(LanguageSymbols.Instance.GetDefaultTypeId(
+                                                Result.ResultTypes[index].ResultType
+                                            ))
+                                            .Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -123,7 +128,12 @@ public class BinaryMinusElement : OperationElement
         Child<ValueElement>(0).GenerateValue(generator, index);
         Child<ValueElement>(1).GenerateValue(generator, index);
 
-        generator.AddOp(GenCodes.Subtract, 0, null);
+        generator.AddOp(GenCodes.Subtract, 1, ByteConverter
+                                            .New()
+                                            .CastByte(LanguageSymbols.Instance.GetDefaultTypeId(
+                                                Result.ResultTypes[index].ResultType
+                                            ))
+                                            .Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -178,7 +188,12 @@ public class BinaryMultiplicationElement : OperationElement
         Child<ValueElement>(0).GenerateValue(generator, index);
         Child<ValueElement>(1).GenerateValue(generator, index);
 
-        generator.AddOp(GenCodes.Multiply, 0, null);
+        generator.AddOp(GenCodes.Multiply, 1, ByteConverter
+                                            .New()
+                                            .CastByte(LanguageSymbols.Instance.GetDefaultTypeId(
+                                                Result.ResultTypes[index].ResultType
+                                            ))
+                                            .Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -233,7 +248,12 @@ public class BinaryDivisionElement : OperationElement
         Child<ValueElement>(0).GenerateValue(generator, index);
         Child<ValueElement>(1).GenerateValue(generator, index);
 
-        generator.AddOp(GenCodes.Divide, 0, null);
+        generator.AddOp(GenCodes.Divide, 1, ByteConverter
+                                            .New()
+                                            .CastByte(LanguageSymbols.Instance.GetDefaultTypeId(
+                                                Result.ResultTypes[index].ResultType
+                                            ))
+                                            .Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -288,7 +308,12 @@ public class BinaryExponentiationElement : OperationElement
         Child<ValueElement>(0).GenerateValue(generator, index);
         Child<ValueElement>(1).GenerateValue(generator, index);
 
-        generator.AddOp(GenCodes.Exponent, 0, null);
+        generator.AddOp(GenCodes.Exponent, 1, ByteConverter
+                                            .New()
+                                            .CastByte(LanguageSymbols.Instance.GetDefaultTypeId(
+                                                Result.ResultTypes[index].ResultType
+                                            ))
+                                            .Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -342,7 +367,12 @@ public class UnaryMinusElement : OperationElement
     {
         Child<ValueElement>(1).GenerateValue(generator, index);
 
-        generator.AddOp(GenCodes.Negate, 0, null);
+        generator.AddOp(GenCodes.Negate, 1, ByteConverter
+                                            .New()
+                                            .CastByte(LanguageSymbols.Instance.GetDefaultTypeId(
+                                                Result.ResultTypes[index].ResultType
+                                            ))
+                                            .Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 

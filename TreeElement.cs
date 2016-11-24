@@ -41,6 +41,16 @@ public abstract class TreeElement
     {
         return m_parent;
     }
+
+    public T RootParent<T>() where T : TreeElement
+    {
+        return m_parent == null ? (T)this : m_parent.RootParent<T>();
+    }
+    public TreeElement RootParent()
+    {
+        return m_parent == null ? this : m_parent.RootParent();
+    }
+
     public void SetParent(TreeElement parent, int index = -1)
     {
         if(m_parent != null)
@@ -83,6 +93,11 @@ public abstract class TreeElement
     }
     public void SetChild(int index, TreeElement child)
     {
+        if(index == -1)
+        {
+            index = m_children.Count;
+        }
+
         CheckChildrenCount(index);
 
         m_children[index] = child;
@@ -116,8 +131,17 @@ public class PrintCurrentValElement : TreeElement//TODO: remove it
         VarGet.IsGet = true;
         VarGet.GenLowLevel(generator);
 
-        generator.AddOp(GenCodes.Print, 0, null);
+        generator.AddOp(GenCodes.Print, 1, ByteConverter.New().CastByte((byte)LanguageSymbols.DefTypesName.Index.Int32).Bytes);
     }
 
-    public VarGetSetValElement VarGet;
+    public VarGetSetValElement VarGet
+    {
+        get{ return m_varGet; }
+        set
+        {
+            m_varGet = value;
+            AddChild(m_varGet);
+        }
+    }
+    private VarGetSetValElement m_varGet;
 }

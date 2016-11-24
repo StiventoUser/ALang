@@ -1,17 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Instruction codes
 /// </summary>
-public enum GenCodes
+public enum GenCodes : Int32
 {
     NewLVar, SetLVarVal, GetLVarVal,
     Push, Pop,
     Add, Subtract, Multiply, Divide, Exponent, Negate,
-    CallFunc,
+    Func,
+    CallFunc, FuncEnd, FuncReturn,
     Meta, Print/*temporary*/
-}
+};
 
 /// <summary>
 /// Instruction
@@ -20,7 +22,7 @@ public sealed class GenOp
 {
     public GenCodes Code;
     public int ArgCount;
-    public IList<byte> Bytes;
+    public IEnumerable<byte> Bytes;
 }
 
 /// <summary>
@@ -93,26 +95,20 @@ public sealed class Generator
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
-    public int GetLocalVarIndex(string name)//TODO: add unique variable id (maybe line?)
+    public int GetLocalVarIndex(string type, string name)
     {
-        int index = m_localVars.IndexOf(name);
+        int index = m_localVars.FindIndex(variable => variable.Name == name);
 
         if(index == -1)
         {
-            m_localVars.Add(name);
+            m_localVars.Add(new LocalVarInfo{ Type = "Int32", Name = "__stackState", Offset = 0 });//TODO: string type to enum
+
+            int offset = m_localVars.Last().Offset + LanguageSymbols.Instance.GetTypeSize(m_localVars.Last().Type);
+            m_localVars.Add(new LocalVarInfo{ Type = type, Name = name, Offset = offset });
             index = m_localVars.Count - 1;
         }
 
         return index;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="name"></param>
-    public void RemoveLocalVariable(string name)//TODO: remove?
-    {
-        m_localVars.Remove(name);
     }
 
     /// <summary>
@@ -147,27 +143,52 @@ public sealed class Generator
     {
         List<GenOp> operations = new List<GenOp>();
 
+        operations.Add(new GenOp{ Code = GenCodes.CallFunc, ArgCount = 1, 
+                                  Bytes = ByteConverter.New().CastInt32(1).Bytes });//Function declared at next instruction
+
         foreach(var i in m_operations)
         {
+            //operations.Add(new GenOp{ Code = GenCodes.NewLVar, ArgCount = 1, Bytes = ByteConverter.New().CastInt32(0).Bytes });
+            
             operations.AddRange(i);
+
+            //operations.Add(new GenOp{ Code = GenCodes.GetLVarVal, ArgCount = 1, Bytes = ByteConverter.New().CastInt32(0).Bytes });
+            //operations.Add(new GenOp{ Code = GenCodes.MoveStack, ArgCount = 0 });
         }
 
-        int funcIndex;
+        int index;
         foreach(var op in operations)
         {
-            if(op.Code == GenCodes.CallFunc)
+            switch(op.Code)
             {
-                funcIndex = ByteConverter.New(op.Bytes).GetInt32();
-                op.Bytes = ByteConverter.New().CastInt32(m_funcOffsets[funcIndex]).Bytes;
+            case GenCodes.CallFunc:
+            {
+                index = BitConverter.ToInt32(op.Bytes.ToArray(), 0);
+                op.Bytes = ByteConverter.New().CastInt32(m_funcOffsets[index]).Bytes;
+            }
+                break;
+            case GenCodes.NewLVar:
+            case GenCodes.GetLVarVal:
+            {   
+                index = BitConverter.ToInt32(op.Bytes.ToArray(), 0);
+                op.Bytes = ByteConverter.New().CastInt32(m_localVars[index].Offset).Bytes;
+            }
+                break;
             }
         }
 
         return operations;
     }
 
+    private class LocalVarInfo
+    {
+        public string Type;
+        public string Name;
+        public int Offset;
+    }
     private List<List<GenOp>> m_operations = new List<List<GenOp>>();
     private List<GenOp> m_currentOperations = new List<GenOp>();
-    private List<string> m_localVars = new List<string>();
+    private List<LocalVarInfo> m_localVars = new List<LocalVarInfo>();
     private List<string> m_funcList = new List<string>();
     private List<int> m_funcOffsets = new List<int>();
 

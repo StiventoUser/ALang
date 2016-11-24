@@ -1,0 +1,70 @@
+-----List of generated instructions-----
+-----All instructions are int32 type-----
+
+**NewLVar: initialize variable using the stack value (remove it from the stack)
+#int32: local variable offset from function beginning
+#int32: variable size in bytes
+
+**SetLVar: move value from the stack to variable (remove it from the stack)
+#int32: local variable offset from function beginning
+#int32: variable size in bytes
+
+**GetLVar: copies value from variable to the stack
+#int32: local variable offset from function beginning
+#int32: variable size in bytes
+
+**Push: copies constant value from program code to the stack
+#int32: value size in bytes
+#byte[arg0]: constant value, which size is specified by argument 0
+
+**Pop: removes value from the stack
+#int32: value size in bytes
+
+**Add: sums 2 values from the stack and push result
+#byte: value type
+
+**Subtract: subtract 2 values from the stack and push result
+#byte: value type
+
+**Multiply: multiplies 2 values from the stack and push result
+#byte: value type
+
+**Divide: divides 2 values from the stack and push result
+#byte: value type
+
+**Explonent: raise to power 2 values from the stack and push result
+#byte: value type
+
+**Negate: change value sign from the stack and push result
+#byte: value type
+
+**Func: function beginning. Do nothing
+#int32: size in bytes of local variables
+
+**CallFunc: calls function, saving stack state
+#int32: function offset in code
+
+**FuncEnd: restores stack state and returns to previous function with no value
+#no arguments
+
+**FuncReturn: restores stack state and returns to previous function with value(s)
+**          : value(s) are pushed after stack restoring
+#int32: return value(s) size in bytes
+
+**Meta: information of a next command
+#no arguments (temporary)
+
+**Print: print stack value (remove it from the stack)
+#byte: value type
+
+-----Type Id-----
+Enumeration based on byte
+    
+0: Int64
+1: Int32
+2: Int16
+3: Int8
+4: Double
+5: Single
+6: String
+7: Bool

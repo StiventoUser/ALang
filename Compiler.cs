@@ -39,7 +39,7 @@ public sealed class Compiler
             m_lexer.Convert(source);
             m_parser.Parse(m_lexer.GetLexems());
             m_generator.Generate(m_parser.GetParserOutput());
-            m_interpreter.Run(m_generator.GetOutput());
+            
 
             if(args[0] == "build")
             {
@@ -69,5 +69,4 @@ public sealed class Compiler
     Lexer m_lexer = new Lexer();
     Parser m_parser = new Parser();
     Generator m_generator = new Generator();
-    Interpreter m_interpreter = new Interpreter();
 }

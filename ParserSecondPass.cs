@@ -115,6 +115,17 @@ public sealed partial class Parser
 
         m_currentBlock.Push(statements);
 
+        VarDeclarationElement declElem;
+        foreach(var arg in funcInfo.Info.Arguments)
+        {
+            declElem = new VarDeclarationElement{ VarType = arg.TypeInfo.Name, 
+                                                  VarName = arg.ArgName,
+                                                  IsInitGeneratedBefore = true };
+            declElem.SetParent(statements);
+            funcElem.ArgumentsVars.Add(declElem);
+            funcElem.LocalVars.Add(declElem);
+        }
+
         if(funcInfo.FuncLexems.Count > 0)
         {
             for(int i = 0, end = funcInfo.FuncLexems.Count;;)
