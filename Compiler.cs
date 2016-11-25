@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Diagnostics;
 
 /// <summary>
 /// It's a compiler class
@@ -39,7 +40,12 @@ public sealed class Compiler
             m_lexer.Convert(source);
             m_parser.Parse(m_lexer.GetLexems());
             m_generator.Generate(m_parser.GetParserOutput());
-            
+
+            m_saver.Program = m_generator.GetOutput();
+            m_saver.Save("program.alang");
+
+            Process.Start(@"/home/stivento/workspace/build-ALangVM-Desktop-Debug/ALangVM", 
+                          Directory.GetCurrentDirectory() + @"/program.alang");
 
             if(args[0] == "build")
             {
@@ -69,4 +75,5 @@ public sealed class Compiler
     Lexer m_lexer = new Lexer();
     Parser m_parser = new Parser();
     Generator m_generator = new Generator();
+    ProgramToFileSaver m_saver = new ProgramToFileSaver();
 }

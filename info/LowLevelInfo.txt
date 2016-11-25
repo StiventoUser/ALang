@@ -1,3 +1,10 @@
+-----File Structure-----
+#"Alang" or 65 76 97 110 103
+#int32: header size
+#byte[header size]: header
+#int32: number ofinstructions
+#instructions
+
 -----List of generated instructions-----
 -----All instructions are int32 type-----
 
