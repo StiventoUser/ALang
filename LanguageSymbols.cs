@@ -290,8 +290,13 @@ public sealed class LanguageSymbols
     /// <returns></returns>
     public string GetFunctionBuildName(LanguageFunction function)
     {
-        return string.Format("{0}_@{1}", function.Name, function.Arguments.Select(arg => arg.TypeInfo.Name).Aggregate(
-                                                                (id1, id2) => id1 + "@" + id2));
+        string argsStr = "null";
+        if(function.Arguments.Count != 0)
+        {
+            argsStr = function.Arguments.Select(arg => arg.TypeInfo.Name)
+                                        .Aggregate((id1, id2) => id1 + "@" + id2);
+        }
+        return string.Format("{0}_@{1}", function.Name, argsStr);
     }
 
     /// <summary>
@@ -468,14 +473,14 @@ public sealed class LanguageSymbols
     };
 
     private List<LanguageType> m_defaultTypes = new List<LanguageType>{ 
-        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int8), IsReserved = true, IsInteger = true },
-        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int16), IsReserved = true, IsInteger = true },
-        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int32), IsReserved = true, IsInteger = true },
         new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int64), IsReserved = true, IsInteger = true },
-        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Bool), IsReserved = true },
-        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Single), IsReserved = true, IsFloat = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int32), IsReserved = true, IsInteger = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int16), IsReserved = true, IsInteger = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int8), IsReserved = true, IsInteger = true },
         new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Double), IsReserved = true, IsFloat = true },
-        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.String), IsReserved = true }
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Single), IsReserved = true, IsFloat = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.String), IsReserved = true },
+        new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Bool), IsReserved = true }
         };
     private List<LanguageType> m_userTypes = new List<LanguageType>();
 

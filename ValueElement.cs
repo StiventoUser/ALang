@@ -226,14 +226,15 @@ public class FunctionCallElement : ValueElement
 
     public override void GenerateValue(Generator generator, int index)
     {
-        generator.AddOp(GenCodes.CallFunc, 1, ByteConverter.New()
-                                                .CastInt32(generator.GetFunctionIndex(FunctionInfo.BuildName))
-                                                .Bytes);
-
         foreach(ValueElement i in Enumerable.Reverse(CallArguments))
         {
             i.GenLowLevel(generator);
         }
+
+        generator.AddOp(GenCodes.CallFunc, 1, ByteConverter
+                                                .New()
+                                                .CastInt32(generator.GetFunctionIndex(FunctionInfo.BuildName))
+                                                .Bytes);
     }
 
     public override void PrepareBeforeGenerate()

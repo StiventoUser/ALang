@@ -53,6 +53,7 @@ public sealed class Generator
             func.PrepareTree();
         }
 
+        m_currentOpOffset += m_reservedInstructions;
         
         foreach(var func in parserOutput.Functions)
         {
@@ -60,13 +61,15 @@ public sealed class Generator
             m_funcOffsets.Add(m_currentOpOffset);
 
             func.GenLowLevel(this);
+            FixFunctionOperations();
+
             m_currentOpOffset += m_currentOperations.Count;
             m_operations.Add(m_currentOperations);
             
             m_currentOperations = null;
         }
 
-        m_output.Operations = BuildOperations();
+        m_output.Operations = BuildProgramOperations();
     }
 
     /// <summary>
@@ -101,9 +104,15 @@ public sealed class Generator
 
         if(index == -1)
         {
-            m_localVars.Add(new LocalVarInfo{ Type = "Int32", Name = "__stackState", Offset = 0 });//TODO: string type to enum
-
-            int offset = m_localVars.Last().Offset + LanguageSymbols.Instance.GetTypeSize(m_localVars.Last().Type);
+            int offset;
+            if(m_localVars.Count == 0)
+            {
+                offset = 0;
+            }
+            else
+            {
+                offset = m_localVars.Last().Offset + LanguageSymbols.Instance.GetTypeSize(m_localVars.Last().Type);
+            } 
             m_localVars.Add(new LocalVarInfo{ Type = type, Name = name, Offset = offset });
             index = m_localVars.Count - 1;
         }
@@ -139,24 +148,40 @@ public sealed class Generator
         m_currentOperations.Add(new GenOp{ Code = code, ArgCount = argCount, Bytes = bytes });
     }
 
-    private List<GenOp> BuildOperations()
+    private void FixFunctionOperations()
+    {
+        Int32 index, size;
+        foreach(var op in m_currentOperations)
+        {
+            switch(op.Code)
+            {
+            case GenCodes.NewLVar:
+            case GenCodes.GetLVarVal:
+            case GenCodes.SetLVarVal:
+            {   
+                var converter = ByteConverter.New(op.Bytes.ToArray());
+                index = converter.GetInt32();
+                size = converter.GetInt32();
+
+                op.Bytes = ByteConverter.New()
+                                        .CastInt32(m_localVars[index].Offset)
+                                        .CastInt32(size)
+                                        .Bytes;
+            }
+                break;
+            }
+        }
+    }
+    private List<GenOp> BuildProgramOperations()
     {
         List<GenOp> operations = new List<GenOp>();
 
-        operations.Add(new GenOp{ Code = GenCodes.CallFunc, ArgCount = 1, 
-                                  Bytes = ByteConverter.New().CastInt32(1).Bytes });//Function declared at next instruction
-
         foreach(var i in m_operations)
         {
-            //operations.Add(new GenOp{ Code = GenCodes.NewLVar, ArgCount = 1, Bytes = ByteConverter.New().CastInt32(0).Bytes });
-            
             operations.AddRange(i);
-
-            //operations.Add(new GenOp{ Code = GenCodes.GetLVarVal, ArgCount = 1, Bytes = ByteConverter.New().CastInt32(0).Bytes });
-            //operations.Add(new GenOp{ Code = GenCodes.MoveStack, ArgCount = 0 });
         }
 
-        int index;
+        Int32 index;
         foreach(var op in operations)
         {
             switch(op.Code)
@@ -167,15 +192,11 @@ public sealed class Generator
                 op.Bytes = ByteConverter.New().CastInt32(m_funcOffsets[index]).Bytes;
             }
                 break;
-            case GenCodes.NewLVar:
-            case GenCodes.GetLVarVal:
-            {   
-                index = BitConverter.ToInt32(op.Bytes.ToArray(), 0);
-                op.Bytes = ByteConverter.New().CastInt32(m_localVars[index].Offset).Bytes;
-            }
-                break;
             }
         }
+
+        operations.Insert(0, new GenOp{ Code = GenCodes.CallFunc, ArgCount = 1, 
+                                  Bytes = ByteConverter.New().CastInt32(1).Bytes });//Call function at 2nd instruction
 
         return operations;
     }
@@ -195,4 +216,6 @@ public sealed class Generator
     private int m_currentOpOffset = 0;
 
     private GeneratorOutput m_output = new GeneratorOutput();
+
+    private int m_reservedInstructions = 1;//TODO: change to opList
 }

@@ -129,6 +129,8 @@ public sealed class ByteConverter
 
         int val = m_bytes[m_pos] | (m_bytes[m_pos+1] << 8) | (m_bytes[m_pos+2] << 16) | (m_bytes[m_pos+3] << 24);
 
+        m_pos += sizeof(Int32);
+
         return val;
     }
 
