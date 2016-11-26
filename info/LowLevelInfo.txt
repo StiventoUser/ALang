@@ -2,7 +2,7 @@
 #"Alang" or 65 76 97 110 103
 #int32: header size
 #byte[header size]: header
-#int32: number ofinstructions
+#int32: number of instructions
 #instructions
 
 -----List of generated instructions-----
@@ -50,6 +50,7 @@
 
 **CallFunc: calls function, saving stack state
 #int32: function offset in code
+#int32: argument(s) size in bytes
 
 **FuncEnd: restores stack state and returns to previous function with no value
 #no arguments

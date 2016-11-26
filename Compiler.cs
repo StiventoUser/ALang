@@ -44,8 +44,8 @@ public sealed class Compiler
             m_saver.Program = m_generator.GetOutput();
             m_saver.Save("program.alang");
 
-            Process.Start(@"/home/stivento/workspace/build-ALangVM-Desktop-Debug/ALangVM", 
-                          Directory.GetCurrentDirectory() + @"/program.alang");
+            //Process.Start(@"/home/stivento/workspace/build-ALangVM-Desktop-Debug/ALangVM", 
+            //              Directory.GetCurrentDirectory() + @"/program.alang");
 
             if(args[0] == "build")
             {

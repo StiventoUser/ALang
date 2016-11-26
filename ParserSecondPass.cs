@@ -123,7 +123,7 @@ public sealed partial class Parser
                                                   IsInitGeneratedBefore = true };
             declElem.SetParent(statements);
             funcElem.ArgumentsVars.Add(declElem);
-            funcElem.LocalVars.Add(declElem);
+            //funcElem.LocalVars.Add(declElem);//TODO: remove it?
         }
 
         if(funcInfo.FuncLexems.Count > 0)
@@ -505,7 +505,7 @@ public sealed partial class Parser
             elem = val;
             return pos;
         }
-        else if(m_currentFunction.LocalVars.Any(local => local.VarName == lexems[pos].source) && lexems[pos+1].source != "(")
+        else if(m_currentFunction.HasVariable(lexems[pos].source) && lexems[pos+1].source != "(")
         {
             var val = new VarGetSetValElement{ VarName = lexems[pos].source };
 

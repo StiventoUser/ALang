@@ -31,6 +31,7 @@ public sealed class GenOp
 public sealed class GeneratorOutput
 {
     public List<GenOp> Operations;
+    public Int32 OperationsByteSize;
 }
 
 /// <summary>
@@ -44,6 +45,13 @@ public sealed class Generator
     /// <param name="parserOutput"></param>
     public void Generate(ParserOutput parserOutput)
     {
+        Func<List<GenOp>, int> findByteOffset = 
+            ops =>
+            {
+                return ops.Select(op => sizeof(Int32) + op.Bytes.Count())
+                          .Aggregate((val1, val2) => val1 + val2);
+            };
+
         foreach(var func in parserOutput.Functions)
         {
             m_funcList.Add(func.Info.BuildName);
@@ -53,7 +61,7 @@ public sealed class Generator
             func.PrepareTree();
         }
 
-        m_currentOpOffset += m_reservedInstructions;
+        m_currentOpOffset += m_reservedInstructionsByteSize;
         
         foreach(var func in parserOutput.Functions)
         {
@@ -63,13 +71,14 @@ public sealed class Generator
             func.GenLowLevel(this);
             FixFunctionOperations();
 
-            m_currentOpOffset += m_currentOperations.Count;
+            m_currentOpOffset += findByteOffset(m_currentOperations);
             m_operations.Add(m_currentOperations);
             
             m_currentOperations = null;
         }
 
         m_output.Operations = BuildProgramOperations();
+        m_output.OperationsByteSize = m_currentOpOffset;
     }
 
     /// <summary>
@@ -145,6 +154,11 @@ public sealed class Generator
     /// <param name="bytes"></param>
     public void AddOp(GenCodes code, int argCount, IList<byte> bytes)
     {
+        if(argCount == 0 || bytes == null)
+        {
+            argCount = 0;
+            bytes = new List<byte>();
+        }
         m_currentOperations.Add(new GenOp{ Code = code, ArgCount = argCount, Bytes = bytes });
     }
 
@@ -181,22 +195,22 @@ public sealed class Generator
             operations.AddRange(i);
         }
 
-        Int32 index;
+        Int32 index, size;
         foreach(var op in operations)
         {
             switch(op.Code)
             {
             case GenCodes.CallFunc:
             {
-                index = BitConverter.ToInt32(op.Bytes.ToArray(), 0);
-                op.Bytes = ByteConverter.New().CastInt32(m_funcOffsets[index]).Bytes;
+                var converter = ByteConverter.New(op.Bytes.ToArray());
+                index = converter.GetInt32();
+                size = converter.GetInt32();
+
+                op.Bytes = ByteConverter.New().CastInt32(m_funcOffsets[index]).CastInt32(size).Bytes;
             }
                 break;
             }
         }
-
-        operations.Insert(0, new GenOp{ Code = GenCodes.CallFunc, ArgCount = 1, 
-                                  Bytes = ByteConverter.New().CastInt32(1).Bytes });//Call function at 2nd instruction
 
         return operations;
     }
@@ -217,5 +231,5 @@ public sealed class Generator
 
     private GeneratorOutput m_output = new GeneratorOutput();
 
-    private int m_reservedInstructions = 1;//TODO: change to opList
+    private int m_reservedInstructionsByteSize = 0;//TODO: change to opList
 }

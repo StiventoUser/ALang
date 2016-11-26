@@ -189,7 +189,7 @@ public class VarGetSetValElement : ValueElement
     public override void PrepareBeforeGenerate()
     {
         var funcElem = RootParent<FunctionElement>();
-        var variable = funcElem.LocalVars.Find(elem => elem.VarName == VarName);
+        var variable = funcElem.GetVariable(VarName);
 
         Compilation.Assert(variable != null, "Variable '" + VarName + "' isn't exist", -1);
 
@@ -226,14 +226,21 @@ public class FunctionCallElement : ValueElement
 
     public override void GenerateValue(Generator generator, int index)
     {
-        foreach(ValueElement i in Enumerable.Reverse(CallArguments))
+        foreach(ValueElement i in CallArguments)//They will be moved at Call instruction
         {
             i.GenLowLevel(generator);
         }
 
-        generator.AddOp(GenCodes.CallFunc, 1, ByteConverter
+        generator.AddOp(GenCodes.CallFunc, 2, ByteConverter
                                                 .New()
                                                 .CastInt32(generator.GetFunctionIndex(FunctionInfo.BuildName))
+                                                .CastInt32(
+                                                    FunctionInfo.Arguments.Select(arg =>
+                                                                                    LanguageSymbols
+                                                                                    .Instance
+                                                                                    .GetTypeSize(arg.TypeInfo.Name))
+                                                                          .Aggregate((val1, val2) => val1 + val2)
+                                                )
                                                 .Bytes);
     }
 
@@ -304,11 +311,12 @@ public class VarDeclarationElement : TreeElement
 
     public override void GenLowLevel(Generator generator)
     {
-        if(!IsInitGeneratedBefore)
+        if(IsInitGeneratedBefore)
         {
-            InitVal.GenLowLevel(generator);
+            return;
         }
 
+        InitVal.GenLowLevel(generator);
         generator.AddOp(GenCodes.NewLVar, 2, 
             ByteConverter.New().CastInt32(generator.GetLocalVarIndex(VarType, VarName))
                                .CastInt32(LanguageSymbols.Instance.GetTypeSize(VarType))

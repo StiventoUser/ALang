@@ -21,7 +21,7 @@ public sealed class ProgramToFileSaver
 
             writer.Write((Int32)0);//header size
 
-            writer.Write((Int32)Program.Operations.Count);
+            writer.Write((Int32)Program.OperationsByteSize);
             foreach(var operation in Program.Operations)
             {
                 writer.Write((Int32)operation.Code);
