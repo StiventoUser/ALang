@@ -19,8 +19,6 @@ public sealed class Compiler
             return;
         }
 
-        //TODO: arguments exception-free container
-
         string source;  
 
         if(File.Exists(args[1]))
@@ -43,18 +41,6 @@ public sealed class Compiler
 
             m_saver.Program = m_generator.GetOutput();
             m_saver.Save("program.alang");
-
-            //Process.Start(@"/home/stivento/workspace/build-ALangVM-Desktop-Debug/ALangVM", 
-            //              Directory.GetCurrentDirectory() + @"/program.alang");
-
-            if(args[0] == "build")
-            {
-
-            }
-            else if(args[0] == "run")
-            {
-                Interpretate();
-            }
         }
 #if (!DEBUG)
         catch(Exception e)
