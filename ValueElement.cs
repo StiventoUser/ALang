@@ -132,9 +132,11 @@ public class ConstValElement : ValueElement
 
     public override void GenerateValue(Generator generator, int index)
     {
+        var valContainer = new StringToValue{ TypeName = Type, StringVal = Value };
+
         generator.AddOp(GenCodes.Push, 2, 
             ByteConverter.New().CastInt32(LanguageSymbols.Instance.GetTypeSize(Type))
-                               .CastInt32(int.Parse(Value)).Bytes);
+                               .CastValueContainer(valContainer).Bytes);
     }
     public override void GenLowLevel(Generator generator)
     { 
