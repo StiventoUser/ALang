@@ -59,9 +59,23 @@ public sealed class ByteConverter
     /// </summary>
     /// <param name="val"></param>
     /// <returns></returns>
-    public ByteConverter CastByte(byte val)
+    public ByteConverter CastByte(sbyte val)
     {
-        m_bytes.Add(val);
+        unchecked
+        {
+            m_bytes.Add((byte)val);
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Int16 to bytes
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
+    public ByteConverter CastInt16(Int16 val)
+    {
+        m_bytes.AddRange(BitConverter.GetBytes(val));
 
         return this;
     }
@@ -91,6 +105,30 @@ public sealed class ByteConverter
     }
 
     /// <summary>
+    /// Double to bytes
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
+    public ByteConverter CastDouble(Double val)
+    {
+        m_bytes.AddRange(BitConverter.GetBytes(val));
+
+        return this;
+    }
+
+    /// <summary>
+    /// Single to bytes
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
+    public ByteConverter CastSingle(Single val)
+    {
+        m_bytes.AddRange(BitConverter.GetBytes(val));
+
+        return this;
+    }
+
+    /// <summary>
     /// String to bytes
     /// </summary>
     /// <param name="val"></param>
@@ -101,6 +139,30 @@ public sealed class ByteConverter
         
         this.CastInt32(bytes.Length);
         m_bytes.AddRange(bytes);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Boolean to bytes
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
+    public ByteConverter CastBoolean(Boolean val)
+    {
+        m_bytes.AddRange(BitConverter.GetBytes(val));
+
+        return this;
+    }
+
+    /// <summary>
+    /// StringToValue to bytes
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
+    public ByteConverter CastValueContainer(StringToValue val)
+    {
+        val.WriteBytes(this);
 
         return this;
     }

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+//TODO: check int8 is signed or unsigned Alang type in C# and C++
+
 /// <summary>
 /// Instruction codes
 /// </summary>

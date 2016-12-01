@@ -19,6 +19,8 @@ public sealed class Compiler
             return;
         }
 
+        //TODO: arguments 
+
         string source;  
 
         if(File.Exists(args[1]))

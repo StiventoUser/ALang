@@ -167,6 +167,19 @@ public sealed class LanguageSymbols
         return result;
     }
 
+    public string GetTypeNameByCSharpTypeName(string typeName)
+    {
+        try
+        {
+            return m_cSharpTypeToLang[typeName];
+        }
+        catch(KeyNotFoundException)
+        {
+            Compilation.WriteCritical(string.Format("BUG: CSharp type '{0}' wasn't found", typeName));
+            return null;
+        }
+    }
+
     /// <summary>
     /// Checks is type is built-in
     /// </summary>
@@ -212,13 +225,13 @@ public sealed class LanguageSymbols
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
-    public byte GetDefaultTypeId(string name)
+    public sbyte GetDefaultTypeId(string name)
     {
         int index = m_defaultTypes.FindIndex(type => type.Name == name);
 
         Compilation.Assert(index != -1, "Type '" + name + "' isn't exist", -1);
 
-        return (byte)index;
+        return (sbyte)index;
     }
 
     /// <summary>
@@ -472,6 +485,8 @@ public sealed class LanguageSymbols
                                  CanCast  = true }
     };
 
+    
+    //The order of this list !MUST! be same as order in DefTypesName
     private List<LanguageType> m_defaultTypes = new List<LanguageType>{ 
         new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int64), IsReserved = true, IsInteger = true },
         new LanguageType{ Name = DefTypesName.Get(DefTypesName.Index.Int32), IsReserved = true, IsInteger = true },
@@ -485,6 +500,18 @@ public sealed class LanguageSymbols
     private List<LanguageType> m_userTypes = new List<LanguageType>();
 
     private List<LanguageFunction> m_userFunctions = new List<LanguageFunction>();
+
+    private Dictionary<string, string> m_cSharpTypeToLang = new Dictionary<string, string>()
+    {
+        { typeof(SByte).Name, DefTypesName.Get(DefTypesName.Index.Int8) },
+        { typeof(Int16).Name, DefTypesName.Get(DefTypesName.Index.Int16) },
+        { typeof(Int32).Name, DefTypesName.Get(DefTypesName.Index.Int32) },
+        { typeof(Int64).Name, DefTypesName.Get(DefTypesName.Index.Int64) },
+        { typeof(Single).Name, DefTypesName.Get(DefTypesName.Index.Single) },
+        { typeof(Double).Name, DefTypesName.Get(DefTypesName.Index.Double) },
+        { typeof(String).Name, DefTypesName.Get(DefTypesName.Index.String) },
+        { typeof(Boolean).Name, DefTypesName.Get(DefTypesName.Index.Bool) }
+    };
 
     private static LanguageSymbols m_this; 
 }

@@ -131,7 +131,7 @@ public class PrintCurrentValElement : TreeElement//TODO: remove it
         VarGet.IsGet = true;
         VarGet.GenLowLevel(generator);
 
-        generator.AddOp(GenCodes.Print, 1, ByteConverter.New().CastByte((byte)LanguageSymbols.DefTypesName.Index.Int32).Bytes);
+        generator.AddOp(GenCodes.Print, 1, ByteConverter.New().CastByte((sbyte)LanguageSymbols.DefTypesName.Index.Int32).Bytes);
     }
 
     public VarGetSetValElement VarGet
