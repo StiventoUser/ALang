@@ -241,7 +241,7 @@ public class FunctionCallElement : ValueElement
                                                                                     LanguageSymbols
                                                                                     .Instance
                                                                                     .GetTypeSize(arg.TypeInfo.Name))
-                                                                          .Aggregate((val1, val2) => val1 + val2)
+                                                                          .Aggregate(0, (val1, val2) => val1 + val2)
                                                 )
                                                 .Bytes);
     }

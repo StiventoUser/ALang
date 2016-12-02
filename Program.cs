@@ -6,7 +6,7 @@ namespace ConsoleApplication
     {
         public static void Main(string[] args)
         {
-            Compiler compiler = new Compiler();
+            Compiler compiler = Compiler.Instance;
             compiler.DoTask(args);
         }
     }

@@ -42,6 +42,9 @@ public static class IEnumerableHelper
     }
     public static string MergeInString<T>(this IList<T> collection, string delimiter = ", ")
     {
+        if(collection.Count == 0)
+            return "";
+
         StringBuilder builder = new StringBuilder();
 
         for(int i = 0, end = collection.Count - 1; i < end; ++i)
@@ -54,6 +57,9 @@ public static class IEnumerableHelper
     }
     public static string MergeInString<T>(this IList<T> collection, Func<T, string> func, string delimiter = ", ")
     {
+        if(collection.Count == 0)
+            return "";
+
         StringBuilder builder = new StringBuilder();
 
         for(int i = 0, end = collection.Count - 1; i < end; ++i)

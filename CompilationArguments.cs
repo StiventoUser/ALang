@@ -4,7 +4,7 @@ using System.Linq;
 
 public sealed class CompilationArguments
 {
-    public bool HasCommand(string command)
+    public bool HasCommand(string command, bool checkRequired = true)
     {
         bool hasCommand = m_result.Exists(r => r.FullName == command);
         if(!hasCommand)
@@ -19,8 +19,13 @@ public sealed class CompilationArguments
 
             if(defaultInfo.Required)
             {
-                Console.WriteLine(string.Format("Command {0} is expected", command));
-                throw new CompileException(); 
+                Console.WriteLine(string.Format("Command {0} is expected" + 
+                                                (!string.IsNullOrEmpty(defaultInfo.ArgsInfo) 
+                                                ? (" with arguments: " + defaultInfo.ArgsInfo) : ""), command));
+                if(checkRequired)
+                {
+                    throw new CompileException(); 
+                }
             }
 
             return false;
@@ -43,7 +48,9 @@ public sealed class CompilationArguments
 
             if(defaultInfo.Required)
             {
-                Console.WriteLine(string.Format("Command {0} is expected", command));
+                Console.WriteLine(string.Format("Command {0} is expected" + 
+                                                (!string.IsNullOrEmpty(defaultInfo.ArgsInfo) 
+                                                ? (" with arguments: " + defaultInfo.ArgsInfo) : ""), command));
                 throw new CompileException();
             }
 

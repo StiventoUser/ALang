@@ -5,9 +5,17 @@ using System.Text;
 using System.Linq;
 
 /// <summary>
+/// Represents a file containing list of lexemes and additional information
+/// </summary>
+public sealed class LexemeModule
+{
+    public List<Lexeme> Lexemes;
+    public string FileName;
+}
+/// <summary>
 /// Stores part of input source code
 /// </summary>
-public class Lexem
+public sealed class Lexeme
 {
     public string source;
 
@@ -23,18 +31,26 @@ public sealed class Lexer
         m_delimiters = m_delimiters.OrderByDescending(delim => delim.Length).ToList();
     }
 
-    public void Convert(string source)
+    public void Convert(List<SourceFileInfo> sources)
     {
-        int pos = 0;
+        int pos;
 
-        while(pos < source.Length)
+        foreach(var source in sources)
         {
-            pos = FindLexerPart(source, pos);
+            pos = 0;
+            m_lexemes = new List<Lexeme>();
+
+            while(pos < source.SourceCode.Length)
+            {
+                pos = FindLexerPart(source.SourceCode, pos);
+            }
+
+            m_output.Add(new LexemeModule{ FileName = source.FileName, Lexemes = m_lexemes });
         }
     }
-    public List<Lexem> GetLexems()
+    public List<LexemeModule> GetOutput()
     {
-        return m_lexems;
+        return m_output;
     }
 
     private int FindLexerPart(string source, int pos)
@@ -69,7 +85,7 @@ public sealed class Lexer
         }
         else
         {
-            throw new System.Exception("Unknown lexem: " + source[pos]);
+            throw new System.Exception("Unknown lexeme: " + source[pos]);
         }
     }
 
@@ -93,7 +109,7 @@ public sealed class Lexer
         }
 
         string result = builder.ToString();
-        m_lexems.Add(new Lexem{ source = result, codeType = GetIsReserved(result), line = m_currentLine });
+        m_lexemes.Add(new Lexeme{ source = result, codeType = GetIsReserved(result), line = m_currentLine });
 
         return pos;
     }
@@ -107,7 +123,7 @@ public sealed class Lexer
             throw new System.Exception("WTF with delimiters");
         }
 
-        m_lexems.Add(new Lexem{ source = m_delimiters[index], codeType = Lexem.CodeType.Delimiter, line = m_currentLine });
+        m_lexemes.Add(new Lexeme{ source = m_delimiters[index], codeType = Lexeme.CodeType.Delimiter, line = m_currentLine });
         pos += m_delimiters[index].Length;
 
         return pos;
@@ -125,7 +141,7 @@ public sealed class Lexer
         }
 
         string result = builder.ToString();
-        m_lexems.Add(new Lexem{ source = result, codeType = Lexem.CodeType.Number, line = m_currentLine });
+        m_lexemes.Add(new Lexeme{ source = result, codeType = Lexeme.CodeType.Number, line = m_currentLine });
 
         return pos;
     }
@@ -146,20 +162,21 @@ public sealed class Lexer
         ++pos;//Skip "
 
         string result = builder.ToString();
-        m_lexems.Add(new Lexem{ source = result, codeType = Lexem.CodeType.String, line = m_currentLine });
+        m_lexemes.Add(new Lexeme{ source = result, codeType = Lexeme.CodeType.String, line = m_currentLine });
 
         return pos;
     }
 
-    Lexem.CodeType GetIsReserved(string source)
+    Lexeme.CodeType GetIsReserved(string source)
     {
         if(m_reserved.Contains(source))
-            return Lexem.CodeType.Reserved;
+            return Lexeme.CodeType.Reserved;
         else
-            return Lexem.CodeType.Name;
+            return Lexeme.CodeType.Name;
     }
 
-    List<Lexem> m_lexems = new List<Lexem>();
+    List<LexemeModule> m_output = new List<LexemeModule>();
+    List<Lexeme> m_lexemes;
     int m_currentLine = 0;
     List<string> m_reserved = new List<string>{ "if", "else", "for", "while", "function", "class", "constexpr",
                                                 "using", "component",
