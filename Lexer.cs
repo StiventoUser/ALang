@@ -179,10 +179,10 @@ public sealed class Lexer
     List<Lexeme> m_lexemes;
     int m_currentLine = 0;
     List<string> m_reserved = new List<string>{ "if", "else", "for", "while", "function", "class", "constexpr",
-                                                "using", "component",
+                                                "using", "component", "default",
                                                 "Int8", "Int16", "Int32", "Int64", "Bool",
                                                 "Single", "Double", "String" };
     List<string> m_delimiters = new List<string>{ "+", "-", "*", "/", ",", ".", "<", ">", "<=",
-                                                  ">=", "=", "!=", ";", ":", "%",
+                                                  ">=", "=", "!=", ";", ":", "%", "^",
                                                   "(", ")", "[", "]", "{", "}", "->" };
 }

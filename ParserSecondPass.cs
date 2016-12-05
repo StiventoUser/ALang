@@ -443,7 +443,13 @@ public sealed partial class Parser
                                                out lastValElement);
                     if(lastValElement == null)
                     {
-                        Compilation.WriteError("Unknown symbol: '" + currentLexeme.source + "'.", currentLexeme.line);
+                        if(!flags.HasFlag(ExpressionFlags.AllowAutoDefault))
+                            Compilation.WriteError("Unknown symbol: '" + currentLexeme.source + "'.", currentLexeme.line);
+                        else//used default keyword. Caller have to find result 
+                        {
+                            elem = null;
+                            return pos;
+                        }
                     }
                     else
                     {
@@ -546,6 +552,7 @@ public sealed partial class Parser
                 values = values[0].Children().Select(child => (ValueElement)child).ToList();
             }
 
+            //TODO: default argument is null. So NullReferenceException
             callElement.FunctionInfo = m_symbols.GetFunction(funcName, values.Select(val => val.Result.ResultTypes[0].ResultType).ToList());
 
             for(int i = 0, end = values.Count; i < end; ++i)
@@ -568,11 +575,8 @@ public sealed partial class Parser
 
             if(lexemes[pos].source == "(")
             {
-                if(!flags.HasFlag(ExpressionFlags.AllowAutoDefault))
-                {
-                    Compilation.Assert(flags.HasFlag(ExpressionFlags.AllowDefaultValue), 
-                                       "Default type value keyword is used but it isn't allowed here.", lexemes[pos].line);
-                }
+                Compilation.Assert(flags.HasFlag(ExpressionFlags.AllowDefaultValue), 
+                                    "Default type value keyword is used but it isn't allowed here.", lexemes[pos].line);
 
                 ++pos;//skip '('
 
