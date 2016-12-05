@@ -73,7 +73,7 @@ public sealed class Compiler
         
 #if (!DEBUG)
         }
-        catch(CompileException e)
+        catch(CompilationException e)
         {
             Console.WriteLine("Compilation error. Abort building.");
         }

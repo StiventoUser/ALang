@@ -67,6 +67,9 @@ public sealed partial class Parser
     /// </summary>
     private void ParseSecondPass()
     {
+        var builtInFuncs = BuiltInFunctions.GetFunctions();
+        m_parserOutput.Functions.AddRange(builtInFuncs);
+
         //Parse all declarations
         foreach(var funcInfo in m_foundedFunctions)
         {
@@ -518,7 +521,7 @@ public sealed partial class Parser
             elem = val;
             return pos;
         }
-        else if(m_foundedFunctions.Any(funcInfo => funcInfo.Info.Name == lexemes[pos].source))
+        else if(m_symbols.HasFunctionWithName(lexemes[pos].source))
         {
             FunctionCallElement callElement = new FunctionCallElement();
 

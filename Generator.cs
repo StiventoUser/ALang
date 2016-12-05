@@ -14,7 +14,8 @@ public enum GenCodes : Int32
     Add, Subtract, Multiply, Divide, Exponent, Negate,
     Func,
     CallFunc, FuncEnd, FuncReturn,
-    Meta, Print/*temporary*/
+    Meta, Print/*temporary*/,
+    Exit, Abort
 };
 
 /// <summary>
@@ -53,6 +54,15 @@ public sealed class Generator
                 return ops.Select(op => sizeof(Int32) + op.Bytes.Count())
                           .Aggregate((val1, val2) => val1 + val2);
             };
+
+        //Move !_Main() at beginning of a program
+        {
+            int i = parserOutput.Functions.FindIndex(f => f.Info.Name == "!_Main");
+
+            var func = parserOutput.Functions[i];
+            parserOutput.Functions.RemoveAt(i);
+            parserOutput.Functions.Insert(0, func);
+        }
 
         foreach(var func in parserOutput.Functions)
         {
@@ -145,6 +155,11 @@ public sealed class Generator
     /// <param name="op"></param>
     public void AddOp(GenOp op)
     {
+        if(op.ArgCount == 0 || op.Bytes == null)
+        {
+            op.ArgCount = 0;
+            op.Bytes = new List<byte>();
+        }
         m_currentOperations.Add(op);
     }
 
@@ -156,12 +171,7 @@ public sealed class Generator
     /// <param name="bytes"></param>
     public void AddOp(GenCodes code, int argCount, IList<byte> bytes)
     {
-        if(argCount == 0 || bytes == null)
-        {
-            argCount = 0;
-            bytes = new List<byte>();
-        }
-        m_currentOperations.Add(new GenOp{ Code = code, ArgCount = argCount, Bytes = bytes });
+        AddOp(new GenOp{ Code = code, ArgCount = argCount, Bytes = bytes });
     }
 
     private void FixFunctionOperations()

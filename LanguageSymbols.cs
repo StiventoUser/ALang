@@ -262,7 +262,7 @@ public sealed class LanguageSymbols
     }
 
     /// <summary>
-    /// Returns function by name and arguments type. Argument type can be null
+    /// Returns function by name and arguments types (can be null).l
     /// </summary>
     /// <param name="name"></param>
     /// <param name="args"></param>
@@ -280,6 +280,30 @@ public sealed class LanguageSymbols
                                                  + " and argumentss' types [" + args.MergeInString() + "] . It's a bug", -1);
 
         return functions.First();
+    }
+
+    /// <summary>
+    /// Check is function exist using it name and arguments types (can be null).
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    public bool HasFunction(string name, IList<string> args)
+    {
+        return m_userFunctions.Any( func => func.Name == name &&
+                                            func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeInfo.Name == arg2 || 
+                                                                                       (String.IsNullOrEmpty(arg2) && arg1.DefaultVal != null)
+                                                                ) );
+    }
+
+    /// <summary>
+    /// Check is function exist using it name. Ignores arguments
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public bool HasFunctionWithName(string name)
+    {
+        return m_userFunctions.Any( func => func.Name == name);
     }
 
     /// <summary>

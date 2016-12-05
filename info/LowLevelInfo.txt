@@ -8,11 +8,11 @@
 -----List of generated instructions-----
 -----All instructions are int32 type-----
 
-**NewLVar: initialize variable using the stack value (remove it from the stack)
+**NewLVar: initializes variable using the stack value (remove it from the stack)
 #int32: local variable offset from function beginning
 #int32: variable size in bytes
 
-**SetLVar: move value from the stack to variable (remove it from the stack)
+**SetLVar: moves value from the stack to variable (remove it from the stack)
 #int32: local variable offset from function beginning
 #int32: variable size in bytes
 
@@ -30,7 +30,7 @@
 **Add: sums 2 values from the stack and push result
 #byte: value type
 
-**Subtract: subtract 2 values from the stack and push result
+**Subtract: subtracts 2 values from the stack and push result
 #byte: value type
 
 **Multiply: multiplies 2 values from the stack and push result
@@ -39,13 +39,13 @@
 **Divide: divides 2 values from the stack and push result
 #byte: value type
 
-**Explonent: raise to power 2 values from the stack and push result
+**Explonent: raises to power 2 values from the stack and push result
 #byte: value type
 
-**Negate: change value sign from the stack and push result
+**Negate: changes value sign from the stack and push result
 #byte: value type
 
-**Func: function beginning. Do nothing
+**Func: function beginning. Does nothing
 #int32: size in bytes of local variables
 
 **CallFunc: calls function, saving stack state
@@ -62,8 +62,14 @@
 **Meta: information of a next command
 #no arguments (temporary)
 
-**Print: print stack value (remove it from the stack)
+**Print: prints stack value (remove it from the stack)
 #byte: value type
+
+**Exit: terminates the program with cleanup
+#no arguments
+
+**Abort: terminates the program with printing error
+
 
 -----Type Id-----
 Enumeration based on byte

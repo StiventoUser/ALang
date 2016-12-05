@@ -1,6 +1,6 @@
 using System;
  
-public class CompileException : Exception
+public class CompilationException : Exception
 {
 }
 
@@ -9,7 +9,7 @@ public static class Compilation
     public static void Abort()
     {
         Console.WriteLine("Aborting...");
-        throw new CompileException();
+        throw new CompilationException();
     }
     public static void Assert(bool condition, string text, int line)
     {

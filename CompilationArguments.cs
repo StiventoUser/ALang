@@ -24,7 +24,7 @@ public sealed class CompilationArguments
                                                 ? (" with arguments: " + defaultInfo.ArgsInfo) : ""), command));
                 if(checkRequired)
                 {
-                    throw new CompileException(); 
+                    throw new CompilationException(); 
                 }
             }
 
@@ -51,7 +51,7 @@ public sealed class CompilationArguments
                 Console.WriteLine(string.Format("Command {0} is expected" + 
                                                 (!string.IsNullOrEmpty(defaultInfo.ArgsInfo) 
                                                 ? (" with arguments: " + defaultInfo.ArgsInfo) : ""), command));
-                throw new CompileException();
+                throw new CompilationException();
             }
 
             return defaultInfo.DefaultArgs ?? new string[0];
