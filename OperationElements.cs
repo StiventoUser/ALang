@@ -53,7 +53,7 @@ public class BinaryPlusElement : OperationElement
         get
         {
             if(Result == null)
-                UpdateResultValue();
+                UpdateResult();
             return Result.ResultTypes.Count;
         }
     }
@@ -85,8 +85,10 @@ public class BinaryPlusElement : OperationElement
 
     public override void PrepareBeforeGenerate()
     {
+        Child<ValueElement>(0).IsGet = true;
+        Child<ValueElement>(1).IsGet = true;
         //TODO: operands count assert
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {
@@ -114,7 +116,7 @@ public class BinaryMinusElement : OperationElement
         get
         {
             if(Result == null)
-                UpdateResultValue();
+                UpdateResult();
             return Result.ResultTypes.Count;
         }
     }
@@ -145,8 +147,10 @@ public class BinaryMinusElement : OperationElement
 
     public override void PrepareBeforeGenerate()
     {
+        Child<ValueElement>(0).IsGet = true;
+        Child<ValueElement>(1).IsGet = true;
         //TODO: operands count assert
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {
@@ -174,7 +178,7 @@ public class BinaryMultiplicationElement : OperationElement
         get
         {
             if(Result == null)
-                UpdateResultValue();
+                UpdateResult();
             return Result.ResultTypes.Count;
         }
     }
@@ -205,8 +209,10 @@ public class BinaryMultiplicationElement : OperationElement
 
     public override void PrepareBeforeGenerate()
     {
+        Child<ValueElement>(0).IsGet = true;
+        Child<ValueElement>(1).IsGet = true;
         //TODO: operands count assert
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {
@@ -234,7 +240,7 @@ public class BinaryDivisionElement : OperationElement
         get
         {
             if(Result == null)
-                UpdateResultValue();
+                UpdateResult();
             return Result.ResultTypes.Count;
         }
     }
@@ -265,8 +271,10 @@ public class BinaryDivisionElement : OperationElement
 
     public override void PrepareBeforeGenerate()
     {
+        Child<ValueElement>(0).IsGet = true;
+        Child<ValueElement>(1).IsGet = true;
         //TODO: operands count assert
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {
@@ -294,7 +302,7 @@ public class BinaryExponentiationElement : OperationElement
         get
         {
             if(Result == null)
-                UpdateResultValue();
+                UpdateResult();
             return Result.ResultTypes.Count;
         }
     }
@@ -325,8 +333,10 @@ public class BinaryExponentiationElement : OperationElement
 
     public override void PrepareBeforeGenerate()
     {
+        Child<ValueElement>(0).IsGet = true;
+        Child<ValueElement>(1).IsGet = true;
         //TODO: operands count assert
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {
@@ -354,7 +364,7 @@ public class UnaryMinusElement : OperationElement
         get
         {
             if(Result == null)
-                UpdateResultValue();
+                UpdateResult();
             return Result.ResultTypes.Count;
         }
     }
@@ -384,8 +394,9 @@ public class UnaryMinusElement : OperationElement
 
     public override void PrepareBeforeGenerate()
     {
+        Child<ValueElement>(1).IsGet = true;
         //TODO: operands count assert
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {
@@ -400,7 +411,7 @@ public class CopyElement : OperationElement
         get
         {
             if(Result == null)
-                UpdateResultValue();
+                UpdateResult();
             return Result.ResultTypes.Count; 
         }
     }
@@ -417,9 +428,6 @@ public class CopyElement : OperationElement
         Compilation.Assert(leftOperand.ValCount == rightOperand.ValCount,
                            "Each lvalue is assigned to only one rvalue", Line); 
 
-        leftOperand.IsSet = true;
-        rightOperand.IsGet = true;
-
         rightOperand.GenerateValue(generator, index);
         leftOperand.GenerateValue(generator, index);
     }
@@ -433,8 +441,10 @@ public class CopyElement : OperationElement
 
     public override void PrepareBeforeGenerate()
     {
+        Child<ValueElement>(0).IsSet = true;
+        Child<ValueElement>(1).IsGet = true;
         //TODO: operands count assert
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {

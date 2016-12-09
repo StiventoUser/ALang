@@ -40,7 +40,7 @@ public static class IEnumerableHelper
 
         return list;
     }
-    public static string MergeInString<T>(this IList<T> collection, string delimiter = ", ")
+    public static string MergeInString(this IList<string> collection, string delimiter = ", ")
     {
         if(collection.Count == 0)
             return "";
@@ -49,7 +49,7 @@ public static class IEnumerableHelper
 
         for(int i = 0, end = collection.Count - 1; i < end; ++i)
         {
-            builder.Append(collection[i]).Append(delimiter);
+            builder.Append(collection[i] ?? "[auto]").Append(delimiter);
         }
         builder.Append(collection[collection.Count-1]);
 

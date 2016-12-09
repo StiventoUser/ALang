@@ -521,7 +521,9 @@ public sealed partial class Parser
         }
         else if(m_currentFunction.HasVariable(lexemes[pos].source) && lexemes[pos+1].source != "(")
         {
-            var val = new VarGetSetValElement{ VarName = lexemes[pos].source };
+            var val = new VarGetSetValElement{ 
+                        VarName = lexemes[pos].source, 
+                        VarType = m_currentFunction.GetVariable(lexemes[pos].source).VarType };
 
             ++pos;
             elem = val;
@@ -552,8 +554,9 @@ public sealed partial class Parser
                 values = values[0].Children().Select(child => (ValueElement)child).ToList();
             }
 
-            //TODO: default argument is null. So NullReferenceException
-            callElement.FunctionInfo = m_symbols.GetFunction(funcName, values.Select(val => val.Result.ResultTypes[0].ResultType).ToList());
+            callElement.FunctionInfo = m_symbols.GetFunction(
+                                        funcName, 
+                                        values.Select(val => val?.Result.ResultTypes[0].ResultType).ToList());
 
             for(int i = 0, end = values.Count; i < end; ++i)
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 public abstract class TreeElement
@@ -25,6 +26,10 @@ public abstract class TreeElement
     public IList<TreeElement> Children()
     {
         return m_children;
+    }
+    public IList<T> Children<T>() where T : TreeElement
+    {
+        return m_children.Select(c => (T)c).ToList();
     }
     public T Child<T>(int index) where T : TreeElement
     {
