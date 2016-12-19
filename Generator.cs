@@ -9,14 +9,25 @@ using System.Linq;
 /// </summary>
 public enum GenCodes : Int32
 {
-    NewLVar, SetLVarVal, GetLVarVal,
-    Push, Pop,
+    NewLVar, SetLVarVal, GetLVarVal, SetRegister, GetRegister,
+    Push, Pop, Clone,
     Add, Subtract, Multiply, Divide, Exponent, Negate,
     Func,
     CallFunc, FuncEnd, FuncReturn,
     Meta, Print/*temporary*/,
     Exit, Abort
 };
+
+/// <summary>
+/// Register names an IDs
+/// </summary>
+public enum RegisterCodes : Int32
+{
+    I8_1, I8_2, I16_1, I16_2, I32_1, I32_2, I64_1, I64_2, //integer numbers with specified size
+    I_ENV_1, I_ENV_2, //integer numbers. Size depends on system
+    S_1, S_2, D_1, D_2 //floating point numbers of single and double precision
+};
+
 
 /// <summary>
 /// Instruction
