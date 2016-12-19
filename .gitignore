@@ -6,3 +6,11 @@ project.lock.json
 text
 *.alang
 *.txt
+*.csproj
+*.cache
+*.config
+*.suo
+*.exe
+*.pdb
+*.user
+*.sln
