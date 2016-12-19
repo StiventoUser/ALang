@@ -86,7 +86,7 @@ public abstract class ValueElement : TreeElement
         {
             if(m_result == null)
             {
-                UpdateResultValue();
+                UpdateResult();
             }
 
             return m_result;
@@ -98,6 +98,15 @@ public abstract class ValueElement : TreeElement
     }
     public abstract void GenerateValue(Generator generator, int index);
 
+    public void UpdateResult()
+    {
+        foreach(ValueElement elem in Children<ValueElement>())
+        {
+            elem.UpdateResult();
+        }
+
+        UpdateResultValue();
+    }
     protected abstract void UpdateResultValue();
 
     private ElementResultType m_result = null;
@@ -124,7 +133,7 @@ public class ConstValElement : ValueElement
             {
                 Type = LanguageSymbols.Instance.GetTypeOfConstVal(m_value);
 
-                UpdateResultValue();
+                UpdateResult();
             }
         }
     }
@@ -145,7 +154,7 @@ public class ConstValElement : ValueElement
 
     public override void PrepareBeforeGenerate()
     {
-        UpdateResultValue();
+        UpdateResult();
     }
     protected override void UpdateResultValue()
     {
@@ -165,7 +174,7 @@ public class VarGetSetValElement : ValueElement
         {
             m_varType = value;
             
-            UpdateResultValue();
+            UpdateResult();
         }
     }
     public string VarName{get;set;}
@@ -197,7 +206,7 @@ public class VarGetSetValElement : ValueElement
 
         VarType = variable.VarType;
 
-        UpdateResultValue();
+        UpdateResult();
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -221,7 +230,7 @@ public class FunctionCallElement : ValueElement
         set
         {
             m_langFunction = value;
-            UpdateResultValue();
+            UpdateResult();
         }
     }
     public List<ValueElement> CallArguments{get;set;}
@@ -248,7 +257,9 @@ public class FunctionCallElement : ValueElement
 
     public override void PrepareBeforeGenerate()
     {
-        UpdateResultValue();
+        CallArguments.ForEach(arg => arg.IsGet = true);
+        
+        UpdateResult();
     }
     public override void GenLowLevel(Generator generator)
     { 
@@ -281,7 +292,7 @@ public class MultipleValElement : ValueElement//TODO first: generating values, s
 
     public override void PrepareBeforeGenerate()
     {
-        UpdateResultValue();
+        UpdateResult();
     }
     public override void GenerateValue(Generator generator, int index)
     {
@@ -311,6 +322,13 @@ public class VarDeclarationElement : TreeElement
     public bool IsInitGeneratedBefore;
     public ValueElement InitVal;
 
+    public override void PrepareBeforeGenerate()
+    {
+        if(IsInitGeneratedBefore)
+            return;
+            
+        InitVal.IsGet = true;
+    }
     public override void GenLowLevel(Generator generator)
     {
         if(IsInitGeneratedBefore)

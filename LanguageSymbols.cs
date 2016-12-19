@@ -269,10 +269,14 @@ public sealed class LanguageSymbols
     /// <returns></returns>
     public LanguageFunction GetFunction(string name, IList<string> args)
     {
-        var functions = m_userFunctions.Where( func => func.Name == name &&
-                                        func.Arguments.CompareTo(args, (arg1, arg2) => arg1.TypeInfo.Name == arg2 || 
-                                                                                       (String.IsNullOrEmpty(arg2) && arg1.DefaultVal != null)
-                                                                ) ).ToList();
+        var functions = m_userFunctions.Where( func => 
+                                        func.Name == name &&
+                                        func.Arguments.CompareTo(args, (arg1, arg2) => 
+                                            (String.IsNullOrEmpty(arg2) && arg1.DefaultVal != null) ||
+                                            arg1.TypeInfo.Name == arg2
+                                                                ) 
+                                             )
+                                        .ToList();
 
         Compilation.Assert(functions.Count != 0, "No function isn't founded with name '" + name + "' and arguments' types["
                                                  + args.MergeInString() + "]", -1);
