@@ -8,49 +8,92 @@
 -----List of generated instructions-----
 -----All instructions are int32 type-----
 
+**Instruction name
+#Variable type of argument:
+[-]Number of the removed bytes from the stack:
+[+]Number of the pushed bytes to the stack:
+
+[delete?]
 **NewLVar: initializes variable using the stack value (remove it from the stack)
 #int32: local variable offset from function beginning
 #int32: variable size in bytes
+[-]byte[arg1]: value on the stack
 
 **SetLVar: moves value from the stack to variable (remove it from the stack)
-#int32: local variable offset from function beginning
 #int32: variable size in bytes
+[-]byte[arg0]: value on the stack
 
 **GetLVar: copies value from variable to the stack
 #int32: local variable offset from function beginning
+#int32: variable size in bytes
+[+]byte[arg1]: value of the variable
+
+**SetRegister
+**GetRegister
+
+**CopyValTo: copies value from the stack to the address
 #int32: variable size in bytes
 
 **Push: copies constant value from program code to the stack
 #int32: value size in bytes
 #byte[arg0]: constant value, which size is specified by argument 0
+[+]byte[arg0]: constant value
+
+**PushVarAddress: copies address of a variable to the stack
+#int32: address
+[+]int8: address
 
 **Pop: removes value from the stack
 #int32: value size in bytes
+[-]byte[arg0]: value
+
+**Clone: copies last N bytes on stack and appends at the end of it
+#int32: bytes count
+[+]byte[arg0]: value
 
 **Add: sums 2 values from the stack and push result
 #byte: value type
+[-]byte[N]: 2nd value
+[-]byte[N]: 1st value
+[+]byte[N]: result
 
 **Subtract: subtracts 2 values from the stack and push result
 #byte: value type
+[-]byte[N]: 2nd value
+[-]byte[N]: 1st value
+[+]byte[N]: result
 
 **Multiply: multiplies 2 values from the stack and push result
 #byte: value type
+[-]byte[N]: 2nd value
+[-]byte[N]: 1st value
+[+]byte[N]: result
 
 **Divide: divides 2 values from the stack and push result
 #byte: value type
+[-]byte[N]: 2nd value
+[-]byte[N]: 1st value
+[+]byte[N]: result
 
 **Explonent: raises to power 2 values from the stack and push result
 #byte: value type
+[-]byte[N]: 2nd value
+[-]byte[N]: 1st value
+[+]byte[N]: result
 
 **Negate: changes value sign from the stack and push result
 #byte: value type
+[-]byte[N]: value
+[+]byte[N]: result
 
 **Func: function beginning. Does nothing
-#int32: size in bytes of local variables
+#int32: size of the required space in the stack
 
 **CallFunc: calls function, saving stack state
 #int32: function offset in code
 #int32: argument(s) size in bytes
+[-]byte[arg1]: arguments
+[+]byte[N]: return values
 
 **FuncEnd: restores stack state and returns to previous function with no value
 #no arguments
@@ -64,21 +107,23 @@
 
 **Print: prints stack value (remove it from the stack)
 #byte: value type
+[-]byte[N]: value
 
 **Exit: terminates the program with cleanup
 #no arguments
 
 **Abort: terminates the program with printing error
-
+#no arguments
 
 -----Type Id-----
 Enumeration based on byte
     
-0: Int64
-1: Int32
-2: Int16
-3: Int8
-4: Double
-5: Single
-6: String
-7: Bool
+0: Int64 [8b]
+1: Int32 [4b]
+2: Int16 [2b]
+3: Int8 [1b]
+4: Double [8b]
+5: Single [4b]
+6: String [number of characters + 1]
+7: Bool [1b]
+8: Address [8b]
