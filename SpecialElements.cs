@@ -1,11 +1,12 @@
-using System;
-
-public sealed class SingleGenOpElement : TreeElement
+namespace ALang
 {
-    public GenOp Operation{get;set;}
-
-    public override void GenLowLevel(Generator generator)
+    public sealed class SingleGenOpElement : TreeElement
     {
-        generator.AddOp(Operation);
+        public GenOp Operation { get; set; }
+
+        public override void GenerateInstructions(Generator generator)
+        {
+            generator.AddOp(Operation);
+        }
     }
 }

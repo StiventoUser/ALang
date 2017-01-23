@@ -1,19 +1,60 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
-public class StatementListElement : TreeElement
+namespace ALang
 {
-    public override void GenLowLevel(Generator generator)
+    public class StatementListElement : TreeElement
     {
-        foreach(var child in m_children)
+        public override int RequiredSpaceInLocals => Children().Max(child => child.RequiredSpaceInLocals);
+
+        public override void GenerateInstructions(Generator generator)
         {
-            child.GenLowLevel(generator);
+            FunctionElement func = RootParent<FunctionElement>();
+
+            foreach (var child in m_children)
+            {
+                child.GenerateInstructions(generator);
+            }
+
+            if (m_localVariables.Count > 0)
+            {
+                foreach (var variable in m_localVariables)
+                {
+                    variable.GenLowLevelDelete(generator);
+                }
+
+                foreach (var variable in m_localVariables)
+                {
+                    func.PopLocalVarStackSpace(variable.VarType, variable.VarName);
+                }
+
+                generator.RemoveLastNLocalVars(m_localVariables.Count);
+            }
         }
 
-        foreach(var variable in LocalVariables)
+        public void AddLocalVariable(VarDeclarationElement elem)
         {
-            variable.GenLowLevelDelete(generator);
+            m_localVariables.Add(elem);
         }
+
+        private List<VarDeclarationElement> m_localVariables = new List<VarDeclarationElement>();
     }
 
-    public List<VarDeclarationElement> LocalVariables = new List<VarDeclarationElement>();
+    public class StatementElement : TreeElement
+    {
+        public override int RequiredSpaceInLocals => Child(0).RequiredSpaceInLocals;
+
+        public override void GenerateInstructions(Generator generator)
+        {
+            Compilation.Assert(ChildrenCount() == 1,
+                string.Format("BUG: Statement contains {0} elements (must 1)", ChildrenCount()), -1);
+
+            //PrepareStatementRecursive(generator);
+
+            Child(0).GenerateInstructions(generator);
+
+            //CleanUpStatementRecursive(generator);
+        }
+    }
 }

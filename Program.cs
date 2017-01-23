@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace ALang
 {
@@ -6,7 +7,7 @@ namespace ALang
     {
         public static void Main(string[] args)
         {
-            Compiler compiler = Compiler.Instance;
+            var compiler = Compiler.Instance;
             compiler.DoTask(args);
         }
     }
