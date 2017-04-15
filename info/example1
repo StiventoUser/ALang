@@ -13,11 +13,13 @@ function Main() -> Int32
 
 	print a
 	print b
+	
+	A(x, y);
 }
 function A(Int32 a, Int32 b) -> Int32
 {
 	Int32 c, Int32 d = (a + b, a + b) * (1, -1);	
   
-  print c
-  print d
+	print c
+	print d
 }
